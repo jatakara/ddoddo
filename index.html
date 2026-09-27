@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171923">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="미래 발명소">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>미래 발명소</title>
+<style>
+:root{--p:#6d5dfc;--k:#ff6f9f;--ink:#171923;--muted:#6b7280;--line:#e5e7eb}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink);background:linear-gradient(180deg,#faf8ff,#eef6ff);min-height:100vh}
+main{max-width:760px;margin:auto;padding:14px 14px 44px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px}.brand{font-weight:950;font-size:21px}.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:19px;margin:12px 0;box-shadow:0 14px 34px rgba(17,24,39,.09)}.hero{text-align:center;padding:28px 20px}.hero h1{font-size:30px;margin:7px 0}.hero p,.muted{color:var(--muted);line-height:1.55;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:620px){.grid{grid-template-columns:1fr}}
+.player{border:1px solid var(--line);border-radius:16px;padding:14px}.p1{box-shadow:inset 4px 0 var(--p)}.p2{box-shadow:inset 4px 0 var(--k)}
+label{display:block;font-size:13px;font-weight:900;margin:10px 0 5px}input,textarea,select{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:13px;font:inherit}textarea{min-height:86px}
+button{border:0;border-radius:14px;padding:12px 15px;font:inherit;font-weight:900;cursor:pointer}.pri{background:var(--p);color:#fff}.pink{background:var(--k);color:#fff}.sec{background:#fff;border:1px solid var(--line)}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.steps{display:flex;gap:6px;overflow:auto;padding:3px 0 7px}.step{white-space:nowrap;background:#e9edf3;color:#667085;padding:7px 9px;border-radius:999px;font-size:11px;font-weight:850}.step.on{background:#171923;color:#fff}
+.mission{background:#f7f5ff;border:1px dashed #beb7ff;padding:15px;border-radius:15px;font-weight:900;line-height:1.45}.weekgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}@media(max-width:620px){.weekgrid{grid-template-columns:repeat(2,1fr)}}.week{background:#fff;border:1px solid var(--line);text-align:left;padding:9px;border-radius:12px}.week.on{outline:3px solid #c7c2ff}.week.done{background:#f1fff4}
+.timer{font-size:44px;font-weight:950}.score{font-size:28px;font-weight:950}.badge{display:inline-block;background:#f5f5f7;border:1px solid var(--line);padding:6px 8px;border-radius:999px;font-size:11px;font-weight:850;margin:3px}.lock{opacity:.35}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div class="brand">🚀 미래 발명소</div><div id="status" class="pill"></div></div>
+<div id="app"></div>
+</main>
+<script>
+var missions=[
+"집에서 매일 반복되는 귀찮은 일","학교에서 자주 생기는 불편","밖에 나갈 때 챙기기 번거로운 것","반려동물과 지낼 때 생기는 불편",
+"정리·수납 때문에 생기는 문제","휴대폰/충전 때문에 생기는 문제","가족끼리 자주 깜빡하는 것","음식·물건 구분이 어려운 문제",
+"비 오는 날 생기는 문제","잠들기 전 귀찮은 일","여행 갈 때 불편한 점","옷·가방·신발 때문에 생기는 문제",
+"아침 준비 시간을 줄이는 방법","집안일을 덜 귀찮게 하는 방법","냉장고 속 낭비를 줄이는 방법","길을 잃지 않게 돕는 방법",
+"학교 준비물을 잊지 않는 방법","숙제를 덜 미루게 하는 방법","친구와 약속을 더 잘 지키는 방법","가족 일정이 꼬이지 않게 하는 방법",
+"반려동물 물·밥 관리를 쉽게 하는 방법","장난감이나 문구류를 쉽게 찾는 방법","자동차 안 불편함 해결","대중교통에서 생기는 불편 해결",
+"비밀번호·로그인을 덜 귀찮게 하는 방법","사진을 쉽게 정리하는 방법","택배·배달의 불편 해결","집에서 소음을 줄이는 방법",
+"더위를 덜 느끼게 하는 방법","추위를 덜 느끼게 하는 방법","물 절약 아이디어","전기 절약 아이디어",
+"재활용을 쉽게 하는 방법","음식물 쓰레기를 줄이는 방법","가족 대화를 늘리는 방법","혼자 있는 시간을 더 즐겁게 하는 방법",
+"운동을 꾸준히 하게 만드는 방법","책 읽기를 재미있게 만드는 방법","공부 집중을 돕는 방법","게임 시간을 건강하게 관리하는 방법",
+"친구에게 고마움을 표현하는 방법","부모와 아이가 덜 싸우는 방법","학교 급식의 불편 해결","교실 정리 문제 해결",
+"여행 짐을 줄이는 방법","사진 찍을 때 생기는 불편 해결","비 오는 날 신발 문제 해결","우산을 잃어버리지 않는 방법",
+"잠을 더 잘 자게 돕는 방법","아침에 잘 일어나게 하는 방법","AI를 더 안전하게 쓰는 방법","2035년에 필요할 새로운 제품"];
+var events=[
+["💸 원가 급등","재료비가 2배가 됐어. 가격을 올릴까, 기능을 줄일까?"],
+["🥊 경쟁자 등장","같은 제품을 더 싸게 파는 경쟁자가 나왔어. 어떻게 차별화할까?"],
+["🔥 주문 폭주","주문이 10배로 늘었어. 가장 먼저 해결할 문제는?"],
+["⭐ 악성 리뷰","'쓰기 불편해요'라는 리뷰가 달렸어. 무엇을 바꿀까?"],
+["🔐 개인정보 이슈","제품이 개인정보를 너무 많이 모은대. 어떻게 줄일까?"],
+["⚡ 장애 발생","핵심 기능이 갑자기 멈췄어. 대체 방법은?"]];
+var base={step:0,week:1,p1:"아빠",p2:"딸",xp:0,coins:0,done:{},history:[],a:{},b:{},event:null,invA:50000,invB:50000};
+var s=Object.assign({},base,JSON.parse(localStorage.getItem("ddoddoFutureLab")||"{}"));
+function save(){localStorage.setItem("ddoddoFutureLab",JSON.stringify(s));status()}
+function status(){var lv=Math.floor(s.xp/100)+1;document.getElementById("status").textContent="LEVEL "+lv+" · "+s.xp+" XP · 🪙 "+s.coins}
+function esc(x){return String(x||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function v(id){var e=document.getElementById(id);return e?e.value.trim():""}
+function steps(){var n=["홈","문제","고객","제품","위기","피치","투자","결과"];return '<div class="steps">'+n.map(function(x,i){return '<span class="step '+(s.step===i?'on':'')+'">'+i+'. '+x+'</span>'}).join("")+'</div>'}
+function nav(n){s.step=n;save();render();scrollTo(0,0)}
+function render(){status();var a=document.getElementById("app");if(s.step===0)a.innerHTML=home();if(s.step===1)a.innerHTML=problem();if(s.step===2)a.innerHTML=customer();if(s.step===3)a.innerHTML=product();if(s.step===4)a.innerHTML=crisis();if(s.step===5)a.innerHTML=pitch();if(s.step===6)a.innerHTML=invest();if(s.step===7)a.innerHTML=result()}
+function home(){var d=Object.keys(s.done).length;return steps()+'<div class="card hero"><div style="font-size:58px">🎮🧠✨</div><h1>아빠 vs 딸<br>미래 발명 게임</h1><p>문제를 찾고, 고객을 이해하고, 제품을 만들고, 투자까지 받아보자.</p></div><div class="card"><div class="grid"><div><label>플레이어 1</label><input id="p1" value="'+esc(s.p1)+'"></div><div><label>플레이어 2</label><input id="p2" value="'+esc(s.p2)+'"></div></div></div><div class="card"><h2>52주 미션</h2><p class="muted">완료 '+d+'/52 · 원하는 주차를 골라도 돼.</p><div class="weekgrid">'+missions.map(function(m,i){var n=i+1;return '<button class="week '+(s.week===n?'on ':'')+(s.done[n]?'done':'')+'" onclick="pick('+n+')"><b>'+(s.done[n]?'✅':'⬜')+' '+n+'주차</b><br><span class="muted">'+m+'</span></button>'}).join("")+'</div><div class="row"><button class="pri" onclick="start()">선택 주차 시작 🚀</button><button class="sec" onclick="history()">기록 보기</button></div></div><div class="card"><span class="badge '+(d<1?'lock':'')+'">🌱 첫 발명</span><span class="badge '+(d<5?'lock':'')+'">🧠 문제 탐정</span><span class="badge '+(d<10?'lock':'')+'">🛠️ 메이커</span><span class="badge '+(d<20?'lock':'')+'">🚀 창업가</span><span class="badge '+(d<52?'lock':'')+'">🏆 미래 설계자</span></div>'}
+function pick(n){s.week=n;save();render()}
+function start(){s.p1=v("p1")||s.p1;s.p2=v("p2")||s.p2;s.a={};s.b={};s.event=null;s.invA=50000;s.invB=50000;nav(1)}
+function problem(){return steps()+'<div class="card"><h2>문제 발견</h2><div class="mission">'+missions[s.week-1]+'</div><div class="grid"><div class="player p1"><h3>🟣 '+esc(s.p1)+'</h3><label>진짜 불편</label><textarea id="qa">'+esc(s.a.problem)+'</textarea></div><div class="player p2"><h3>🩷 '+esc(s.p2)+'</h3><label>진짜 불편</label><textarea id="qb">'+esc(s.b.problem)+'</textarea></div></div><div class="row"><button class="sec" onclick="nav(0)">← 홈</button><button class="pri" onclick="saveProblem()">다음 →</button></div></div>'}
+function saveProblem(){s.a.problem=v("qa");s.b.problem=v("qb");if(!s.a.problem||!s.b.problem)return alert("둘 다 문제를 적어줘.");nav(2)}
+function customer(){return steps()+'<div class="card"><h2>누가 가장 불편할까?</h2>'+pairInput("고객","customer","예: 충전기가 많은 직장인")+'<div class="mission">서로 물어보기: “이 사람은 지금 어떻게 해결하고 있지?”</div><div class="row"><button class="sec" onclick="nav(1)">← 이전</button><button class="pri" onclick="savePair(3,'customer')">다음 →</button></div></div>'}
+function pairInput(title,key,ph){return '<div class="grid"><div class="player p1"><h3>'+esc(s.p1)+'</h3><label>'+title+'</label><input id="a_'+key+'" value="'+esc(s.a[key])+'" placeholder="'+ph+'"></div><div class="player p2"><h3>'+esc(s.p2)+'</h3><label>'+title+'</label><input id="b_'+key+'" value="'+esc(s.b[key])+'" placeholder="'+ph+'"></div></div>'}
+function savePair(next,key){s.a[key]=v("a_"+key);s.b[key]=v("b_"+key);if(!s.a[key]||!s.b[key])return alert("둘 다 적어줘.");nav(next)}
+function product(){return steps()+'<div class="card"><h2>상품으로 만들기</h2><div class="grid"><div class="player p1"><h3>'+esc(s.p1)+'</h3><label>제품명</label><input id="ap" value="'+esc(s.a.product)+'"><label>해결 방법</label><textarea id="as">'+esc(s.a.solution)+'</textarea><label>가격(원)</label><input id="apr" type="number" value="'+esc(s.a.price)+'"></div><div class="player p2"><h3>'+esc(s.p2)+'</h3><label>제품명</label><input id="bp" value="'+esc(s.b.product)+'"><label>해결 방법</label><textarea id="bs">'+esc(s.b.solution)+'</textarea><label>가격(원)</label><input id="bpr" type="number" value="'+esc(s.b.price)+'"></div></div><div class="row"><button class="sec" onclick="nav(2)">← 이전</button><button class="pri" onclick="saveProduct()">위기 뽑기 🎲</button></div></div>'}
+function saveProduct(){s.a.product=v("ap");s.b.product=v("bp");s.a.solution=v("as");s.b.solution=v("bs");s.a.price=v("apr");s.b.price=v("bpr");if(!s.a.product||!s.b.product||!s.a.solution||!s.b.solution)return alert("제품명과 해결법을 적어줘.");s.event=events[Math.floor(Math.random()*events.length)];nav(4)}
+function crisis(){return steps()+'<div class="card"><h2>'+s.event[0]+'</h2><div class="mission">'+s.event[1]+'</div><div class="grid"><div class="player p1"><label>'+esc(s.p1)+' 대응</label><textarea id="aa">'+esc(s.a.adapt)+'</textarea></div><div class="player p2"><label>'+esc(s.p2)+' 대응</label><textarea id="ba">'+esc(s.b.adapt)+'</textarea></div></div><div class="row"><button class="sec" onclick="reroll()">🎲 다시 뽑기</button><button class="pri" onclick="saveCrisis()">다음 →</button></div></div>'}
+function reroll(){s.event=events[Math.floor(Math.random()*events.length)];save();render()}
+function saveCrisis(){s.a.adapt=v("aa");s.b.adapt=v("ba");if(!s.a.adapt||!s.b.adapt)return alert("둘 다 대응책을 적어줘.");nav(5)}
+var tick=null,t=30;
+function pitch(){return steps()+'<div class="card"><h2>30초 투자 설명</h2><div id="timer" class="timer">00:30</div><div class="row"><button class="pri" onclick="timerStart()">▶ 시작</button><button class="sec" onclick="timerReset()">↻ 리셋</button></div><div class="mission">설명 순서: 문제 → 고객 → 해결법 → 왜 살까?</div><div class="row"><button class="sec" onclick="nav(4)">← 이전</button><button class="pri" onclick="nav(6)">투자하러 가기 →</button></div></div>'}
+function timerStart(){clearInterval(tick);t=30;timerDraw();tick=setInterval(function(){t--;timerDraw();if(t<=0){clearInterval(tick);alert("⏰ 시간 끝!")}},1000)}
+function timerReset(){clearInterval(tick);t=30;timerDraw()}function timerDraw(){var e=document.getElementById("timer");if(e)e.textContent="00:"+String(Math.max(0,t)).padStart(2,"0")}
+function invest(){return steps()+'<div class="card"><h2>상대 제품에 투자하기</h2><p class="muted">각자 가상 10만원. 자기 제품에는 투자할 수 없어.</p><div class="grid"><div class="player p1"><h3>'+esc(s.p1)+' → '+esc(s.b.product)+'</h3><input id="ia" type="range" min="0" max="100000" step="10000" value="'+s.invA+'" oninput="document.getElementById(\'ioa\').textContent=Number(this.value).toLocaleString()+\'원\'"><div id="ioa" class="score">'+Number(s.invA).toLocaleString()+'원</div></div><div class="player p2"><h3>'+esc(s.p2)+' → '+esc(s.a.product)+'</h3><input id="ib" type="range" min="0" max="100000" step="10000" value="'+s.invB+'" oninput="document.getElementById(\'iob\').textContent=Number(this.value).toLocaleString()+\'원\'"><div id="iob" class="score">'+Number(s.invB).toLocaleString()+'원</div></div></div><div class="mission">반드시 말하기: “왜 이 금액만 투자했는지”</div><div class="row"><button class="sec" onclick="nav(5)">← 이전</button><button class="pink" onclick="finish()">결과 보기 🏆</button></div></div>'}
+function judge(x){var p=0;if((x.problem||"").length>=10)p+=2;else p+=1;if((x.customer||"").length>=4)p+=2;else p+=1;if((x.solution||"").length>=18)p+=3;else p+=1;if((x.adapt||"").length>=12)p+=2;else p+=1;if(Number(x.price)>0)p+=1;return p}
+function finish(){s.invA=Number(document.getElementById("ia").value);s.invB=Number(document.getElementById("ib").value);nav(7)}
+function result(){var sa=Math.round(s.invB/10000)+judge(s.a),sb=Math.round(s.invA/10000)+judge(s.b),win=sa===sb?"🤝 공동 우승":sa>sb?"🏆 "+s.p1+" 우승":"🏆 "+s.p2+" 우승";return steps()+'<div class="card hero"><div style="font-size:58px">🤖🏆</div><h1>'+win+'</h1><p>상대 투자 + 문제정의·고객·해결·위기대응 점수</p></div><div class="card"><div class="grid"><div class="player p1"><h3>'+esc(s.p1)+'</h3><div class="score">'+sa+'점</div><p class="muted">제품: '+esc(s.a.product)+'<br>받은 투자: '+s.invB.toLocaleString()+'원</p></div><div class="player p2"><h3>'+esc(s.p2)+'</h3><div class="score">'+sb+'점</div><p class="muted">제품: '+esc(s.b.product)+'<br>받은 투자: '+s.invA.toLocaleString()+'원</p></div></div><div class="mission">진짜 승리 조건: 처음 아이디어보다 마지막 아이디어가 더 좋아졌다면 성공!</div><div class="row"><button class="pri" onclick="complete(\''+win.replace(/'/g,"")+'\')">'+(s.done[s.week]?"✅ 완료됨":"🎁 주차 완료 + 보상")+'</button><button class="sec" onclick="nav(0)">홈</button></div></div>'}
+function complete(win){if(!s.done[s.week]){s.done[s.week]=1;s.xp+=35;s.coins+=100;s.history.push({week:s.week,date:new Date().toLocaleDateString("ko-KR"),a:s.a.product,b:s.b.product,result:win});save();alert("🎉 +35 XP · +100 코인!")}nav(0)}
+function history(){if(!s.history.length)return alert("아직 기록이 없어.");alert(s.history.slice().reverse().map(function(h){return h.week+"주차 · "+h.date+"\n"+h.a+" vs "+h.b+" · "+h.result}).join("\n\n"))}
+status();render();
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./service-worker.js").catch(function(){})})}
+</script>
+</body>
+</html>
