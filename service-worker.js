@@ -1,4 +1,4 @@
-const CACHE="ddoddo-future-lab-v7";
+const CACHE="ddoddo-future-lab-v8";
 const ASSETS=[
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const ASSETS=[
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
-  "./block-game-v2.html"
+  "./block-game-v2.html",
+  "./ddoni-snack-game.html"
 ];
 
 self.addEventListener("install",event=>{
