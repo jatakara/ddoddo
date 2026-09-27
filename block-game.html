@@ -6,7 +6,66 @@
 <meta name="theme-color" content="#0f172a">
 <title>블록 게임</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:#0f172a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;display:flex;justify-content:center;min-height:100vh}.wrap{width:min(100%,440px);padding:12px 12px calc(18px + env(safe-area-inset-bottom))}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.top b{font-size:22px}.back,button{border:0;border-radius:13px;background:#1e293b;color:#fff;padding:11px 13px;font-weight:800;text-decoration:none}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:9px}.stat{background:#111827;border:1px solid #293548;border-radius:12px;text-align:center;padding:8px 4px}.stat strong{display:block;font-size:18px}.stat small{color:#94a3b8}canvas{width:100%;aspect-ratio:1/2;background:#050914;border:1px solid #293548;border-radius:14px;display:block}.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:9px}.controls button{font-size:22px;min-height:54px}.drop{background:#6d28d9}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.note{text-align:center;color:#94a3b8;font-size:11px;margin-top:8px;line-height:1.5}.over{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:25px}.over.show{display:flex}.box{background:#111827;border:1px solid #334155;border-radius:20px;padding:24px;text-align:center;max-width:320px;width:100%}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{background:#0f172a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;display:flex;justify-content:center}
+.wrap{
+  width:min(100%,440px);
+  height:100dvh;
+  max-height:100dvh;
+  padding:max(8px,env(safe-area-inset-top)) 10px max(8px,env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  overflow:hidden
+}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex:0 0 auto}
+.top b{font-size:clamp(17px,4.8vw,21px);white-space:nowrap}
+.back,button{border:0;border-radius:12px;background:#1e293b;color:#fff;padding:9px 11px;font-weight:800;text-decoration:none}
+.back{font-size:13px;white-space:nowrap}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px;flex:0 0 auto}
+.stat{background:#111827;border:1px solid #293548;border-radius:11px;text-align:center;padding:5px 3px}
+.stat strong{display:block;font-size:clamp(14px,4vw,17px);line-height:1.1}
+.stat small{color:#94a3b8;font-size:10px}
+canvas{
+  display:block;
+  margin:0 auto;
+  height:min(
+    calc(100dvh - 218px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),
+    calc((100vw - 20px) * 2)
+  );
+  width:auto;
+  max-width:100%;
+  min-height:0;
+  aspect-ratio:1/2;
+  background:#050914;
+  border:1px solid #293548;
+  border-radius:12px;
+  flex:0 1 auto;
+  touch-action:none
+}
+.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px;flex:0 0 auto}
+.controls button{font-size:20px;min-height:44px;padding:7px 4px}
+.drop{background:#6d28d9}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;flex:0 0 auto}
+.bottom button{min-height:38px;padding:7px 8px;font-size:13px}
+.note{text-align:center;color:#94a3b8;font-size:10px;margin-top:5px;line-height:1.25;flex:0 0 auto}
+.over{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:25px;z-index:10}
+.over.show{display:flex}
+.box{background:#111827;border:1px solid #334155;border-radius:20px;padding:24px;text-align:center;max-width:320px;width:100%}
+@media (max-height:760px){
+  .wrap{padding-top:max(5px,env(safe-area-inset-top));padding-bottom:max(5px,env(safe-area-inset-bottom))}
+  .top{margin-bottom:4px}.hud{margin-bottom:4px}
+  .stat{padding:4px 2px}
+  canvas{height:min(calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),calc((100vw - 20px)*2))}
+  .controls{margin-top:4px}.controls button{min-height:40px;font-size:18px}
+  .bottom{margin-top:4px}.bottom button{min-height:34px}
+  .note{display:none}
+}
+@media (orientation:landscape){
+  body{overflow:auto}
+  .wrap{height:auto;min-height:100dvh;overflow:visible}
+  canvas{height:min(62dvh,600px);width:auto}
+}
 </style>
 </head>
 <body>
