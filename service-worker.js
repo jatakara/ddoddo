@@ -1,4 +1,4 @@
-const CACHE="ddoddo-future-lab-v5";
+const CACHE="ddoddo-future-lab-v6";
 const ASSETS=[
   "./",
   "./index.html",
