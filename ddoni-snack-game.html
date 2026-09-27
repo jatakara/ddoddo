@@ -9,41 +9,46 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;-webkit-text-size-adjust:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:linear-gradient(180deg,#fff7ed 0%,#fffbeb 54%,#eff6ff 100%);color:#252525}
-.app{width:min(100vw,430px);height:100svh;margin:0 auto;padding:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:linear-gradient(180deg,#fff7ed 0%,#fffdf5 58%,#eef6ff 100%);color:#252525}
+.app{width:min(100vw,430px);height:100svh;margin:0 auto;padding:max(7px,env(safe-area-inset-top)) 12px max(7px,env(safe-area-inset-bottom));display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:7px;overflow:hidden}
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .title{font-size:20px;font-weight:950}.back{background:#fff;border:1px solid #e5e7eb;border-radius:13px;padding:8px 11px;text-decoration:none;color:#333;font-weight:850;font-size:12px}
-.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.hud div{background:rgba(255,255,255,.88);border:1px solid #f0e4d8;border-radius:13px;text-align:center;padding:7px 3px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
-.hud b{display:block;font-size:16px}.hud span{font-size:10px;color:#7c6f64}
-.scene{min-height:0;background:rgba(255,255,255,.78);border:1px solid #f0e4d8;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:8px 10px;box-shadow:0 16px 35px rgba(145,91,32,.10)}
-.spark{position:absolute;font-size:20px;animation:pop .65s ease-out forwards;pointer-events:none}
-@keyframes pop{from{opacity:1;transform:translateY(0) scale(.8)}to{opacity:0;transform:translateY(-70px) scale(1.35)}}
-.dog{transition:transform .18s}.dogphoto{width:clamp(150px,43vw,210px);height:clamp(175px,50vw,245px);object-fit:cover;object-position:center 42%;display:block;border-radius:24px;border:4px solid #fff;box-shadow:0 10px 24px rgba(93,62,33,.16);filter:none}
-.dog.happy{animation:happy .45s ease}
-.dog.nope{animation:nope .35s ease}
-@keyframes happy{0%,100%{transform:scale(1)}35%{transform:scale(1.12) rotate(-5deg)}70%{transform:scale(1.1) rotate(5deg)}}
+.hud{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;gap:5px}
+.hud div{background:rgba(255,255,255,.9);border:1px solid #f0e4d8;border-radius:13px;text-align:center;padding:6px 2px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+.hud b{display:block;font-size:14px;white-space:nowrap}.hud span{font-size:9px;color:#7c6f64}
+.levelBadge{background:linear-gradient(180deg,#fff7cc,#ffe89b)!important;border-color:#f5d76e!important}
+.scene{min-height:0;background:rgba(255,255,255,.82);border:1px solid #f0e4d8;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:7px 10px;box-shadow:0 16px 35px rgba(145,91,32,.10)}
+.dog{transition:transform .18s}.dogphoto{width:clamp(132px,38vw,180px);height:clamp(150px,43vw,205px);object-fit:cover;object-position:center 42%;display:block;border-radius:22px;border:4px solid #fff;box-shadow:0 10px 24px rgba(93,62,33,.16)}
+.dog.happy{animation:happy .45s ease}.dog.nope{animation:nope .35s ease}
+@keyframes happy{0%,100%{transform:scale(1)}35%{transform:scale(1.1) rotate(-4deg)}70%{transform:scale(1.08) rotate(4deg)}}
 @keyframes nope{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-.bubble{margin-top:6px;background:#fff;border:2px solid #f1dcc7;border-radius:18px;padding:8px 13px;font-weight:900;font-size:13px;min-height:38px;display:flex;align-items:center;justify-content:center;text-align:center}
-.foodcard{margin-top:10px;width:min(92%,310px);background:#fff;border:1px solid #eee;border-radius:20px;padding:11px 14px;text-align:center;box-shadow:0 10px 24px rgba(0,0,0,.07)}
-.foodemoji{font-size:clamp(48px,16vw,68px);line-height:1.05}.foodname{font-size:22px;font-weight:950;margin-top:4px}.hint{font-size:11px;color:#8a7d72;margin-top:4px;min-height:16px}
-.question{font-size:13px;font-weight:850;color:#5d5148;margin-top:7px}
+.spark{position:absolute;font-size:20px;animation:pop .65s ease-out forwards;pointer-events:none}
+@keyframes pop{from{opacity:1;transform:translateY(0) scale(.8)}to{opacity:0;transform:translateY(-65px) scale(1.35)}}
+.bubble{margin-top:5px;background:#fff;border:2px solid #f1dcc7;border-radius:18px;padding:7px 12px;font-weight:900;font-size:12px;min-height:34px;display:flex;align-items:center;justify-content:center;text-align:center}
+.foodcard{margin-top:7px;width:min(92%,310px);background:#fff;border:1px solid #eee;border-radius:19px;padding:8px 12px;text-align:center;box-shadow:0 10px 24px rgba(0,0,0,.07)}
+.foodemoji{font-size:clamp(42px,13vw,58px);line-height:1.05}.foodname{font-size:20px;font-weight:950;margin-top:3px}.hint{font-size:10px;color:#8a7d72;margin-top:3px;min-height:14px}.question{font-size:12px;font-weight:850;color:#5d5148;margin-top:5px}
+.timerWrap{width:min(90%,290px);height:7px;background:#eee7df;border-radius:99px;overflow:hidden;margin-top:6px;display:none}
+.timerBar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#facc15,#ef4444);transform-origin:left center}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.actions button{border:0;border-radius:18px;min-height:58px;font:inherit;font-weight:950;font-size:16px;color:#fff;touch-action:manipulation}
+.actions button{border:0;border-radius:18px;min-height:56px;font:inherit;font-weight:950;font-size:16px;color:#fff;touch-action:manipulation}
 .yes{background:linear-gradient(180deg,#22c55e,#16a34a)}.no{background:linear-gradient(180deg,#fb7185,#e11d48)}
 .actions button:active{transform:scale(.98)}
 .progress{height:8px;background:#fff;border-radius:99px;overflow:hidden;border:1px solid #eee}.bar{height:100%;width:0;background:linear-gradient(90deg,#fb923c,#facc15);transition:width .25s}
 .note{text-align:center;font-size:9px;color:#8b7f76;line-height:1.25}
-.overlay{position:fixed;inset:0;background:rgba(36,27,20,.62);display:none;align-items:center;justify-content:center;padding:22px;z-index:20}
-.overlay.show{display:flex}.result{width:min(100%,340px);background:#fff;border-radius:24px;padding:24px;text-align:center;box-shadow:0 20px 55px rgba(0,0,0,.22)}
-.result .big{font-size:58px}.result h2{margin:7px 0}.result p{color:#6b625b;line-height:1.5;font-size:13px}
-.result button{width:100%;border:0;border-radius:15px;padding:13px;background:#f97316;color:#fff;font-weight:950;font-size:16px}
+.overlay{position:fixed;inset:0;background:rgba(36,27,20,.66);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay.show{display:flex}.modal{width:min(100%,360px);background:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 20px 55px rgba(0,0,0,.22);max-height:88svh;overflow:auto}
+.big{font-size:56px}.modal h2{margin:6px 0}.modal p{color:#6b625b;line-height:1.45;font-size:13px}
+.modal button{width:100%;border:0;border-radius:15px;padding:12px;margin-top:8px;font-weight:950;font-size:15px}
+.primary{background:#f97316;color:#fff}.secondary{background:#f3f4f6;color:#333}.stageList{display:grid;gap:8px;text-align:left;margin-top:12px}
+.stageBtn{width:100%;border:1px solid #eee;background:#fff;border-radius:16px;padding:12px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stageBtn.locked{opacity:.45}.stageBtn .sname{font-weight:950}.stageBtn .sdesc{font-size:10px;color:#7d746d;margin-top:2px}.stageNum{font-size:22px;font-weight:950}
+.combo{position:absolute;right:14px;top:12px;background:#111827;color:#fff;border-radius:99px;padding:6px 9px;font-size:11px;font-weight:900;display:none}
 @media(max-height:720px){
-  .app{gap:5px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
-  .title{font-size:17px}.back{padding:6px 9px}.hud div{padding:4px 2px}.hud b{font-size:14px}
-  .dogphoto{width:132px;height:154px;border-radius:20px}.bubble{padding:5px 10px;min-height:30px;font-size:11px}.foodcard{margin-top:5px;padding:7px 11px}
-  .foodemoji{font-size:44px}.foodname{font-size:18px}.question{font-size:11px;margin-top:4px}.hint{font-size:9px}
-  .actions button{min-height:48px;font-size:14px}.note{display:none}
+ .app{gap:4px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
+ .title{font-size:17px}.back{padding:6px 9px}.hud div{padding:4px 2px}.hud b{font-size:12px}
+ .dogphoto{width:118px;height:136px;border-radius:18px}.bubble{padding:4px 9px;min-height:28px;font-size:10px}.foodcard{margin-top:4px;padding:6px 9px}
+ .foodemoji{font-size:38px}.foodname{font-size:17px}.question{font-size:10px;margin-top:3px}.hint{font-size:9px}
+ .actions button{min-height:46px;font-size:14px}.note{display:none}
 }
 </style>
 </head>
@@ -51,11 +56,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sa
 <div class="app">
   <div class="top"><div class="title">🐶 또니 간식 타임</div><a class="back" href="./">← 게임 홈</a></div>
   <div class="hud">
+    <div class="levelBadge"><b id="level">LV.1</b><span>현재 레벨</span></div>
     <div><b id="score">0</b><span>점수</span></div>
     <div><b id="hearts">❤️❤️❤️</b><span>하트</span></div>
-    <div><b id="best">0</b><span>최고점수</span></div>
+    <div><b id="best">0</b><span>최고</span></div>
   </div>
   <div class="scene" id="scene">
+    <div id="combo" class="combo">🔥 COMBO 2</div>
     <img id="dog" class="dog dogphoto" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA4KCw0LCQ4NDA0QDw4RFiQXFhQUFiwgIRokNC43NjMuMjI6QVNGOj1OPjIySGJJTlZYXV5dOEVmbWVabFNbXVn/2wBDAQ8QEBYTFioXFypZOzI7WVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVn/wAARCADcANwDASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAAAgQBAwUABgf/xAA2EAACAQMDAgUCBAYCAgMAAAABAhEAAyEEEjFBUQUTImFxMoEjQpHBFDNSobHRBuEV8ENicv/EABgBAQEBAQEAAAAAAAAAAAAAAAABAgME/8QAGhEBAQEBAQEBAAAAAAAAAAAAAAERAiESMf/aAAwDAQACEQMRAD8A9GCCQDM9a5sdSc4pbR+IafXh/wCGZnVTBbbE/FObTuMZArIrLKpyDDDGaF3tqpcr6VEn2q0IHInIBj4qLult3UuW3E2yM0HgPEtW3iHiJPlBJMALif8AdfQfD7Rv+FWrGoIV1X0n+msNf+MWbWptva1DbJlYWSDXprNpNoVt8zkkVu3Uee1Xht++jG4gtFTG4Lu/U1k3vDNRbki2Li8yhn+1e/WQwCggDnOI96V1fhqMRd02G6oDg/Fc7w3O7HgIKmGBB7Hmor19zQXrqsLumFwCSJAms7U+DWvytcsHswkCsXmuk7jC3FeCRUhpGRTl7wrVWpKqLqjqhz+lJMpVtrqVYdOCKzjWiDA4B+xrjGQR+tB95qQY7ioqDbByJHxUFWHGR+lFM1M45oKy0fUIqZBNHPeo2r0H6UAkAV3wYogh/Kf1qPVPqEUUOZmPvXSD7UcEV0DqJ+KIgTz/AHogxPvQBexINTxyJoD3A44qNoP/AFUY7/YiuzPT7UHbSODXEsKIMeJBopIoPS+D2hZ8PsIvqkTuUAT7+9aKsQp2mDPWvN+BeO2ii6PVkWry4Xcp/QzXpUAKEptYN9Nemx5RqSFkdO8Zqi+4SySRDCj3gKZBg4A7UpqbyuygwwHvM1FVLeYXg24Dtmnk1Vx43Tj2pe3pbRnfdVewI/erGV7AIBI6iDUU0up3Jtn7zzVyOvpbgnqKz7JF9mm56gMYq23ejYAANpz701MPteyBwBz3Joixuj121ZP/ALAVG5Hfcy+k5rraC47bnntWkVNoLDoRZm2xM4zWPqbKibd+2tyI+tc16EJctQ2PgUOq01vU2gGUzP3FSzVlx5C94VpbkeWz2WIn+of3pK94TqrU7At5RiUOf0r0Wv0p013aoZrYmCRVAxdcCRP25Fc7y6TqvLOpRttxCjdmEVEH5r1LMLlkC6i3BIkMJxSl3wrSXI2b7DESIMis/LU7YEmpx960r3g+pSTaKXlHYwaQuWrlpttxGtnswipjUsoZqQeg61A9wftUx2zUVxUdqgKy8MD7Gikj3+a6QelABY/mT71MAjBoqjaGPT5oBIrgCP8AVWFCIKt+tQQwMkfJGaAJj6hUgj+oiigEf5NCRJwKD02v8E0esUt5XlXTzcWsr/wPimlfdofERsUcMxEn4yK9QZCiQWIwRFC963ZtuxBKx9JwQa9GvM87otV4qha1rmbuGwf8UyrwciczQai/5jl9oX2FQtzIMR3rNutSGTqil3a8lGHTpXJdxtW8xHsP2qvcMSA0VNtkU+kAe3aoL7QIuB5f7IaYDDeYbPORB/Sl1dZERPSBNaNprd22BdPq7BcVUpq1c3WwnIiatEyDMCMUuq27ZUBsHETRbociZFaZN78DJnvVhZpGQRMTSqPu2g5Aq6CSBAWqidVYS7aZXMAjpXnIK3l746favTyxMEek4msXxDR3Eum4lv8ADHbMVOo1zWeBCOO37GpPCH5FHE3Li9DP9xQTNoHsRWGhDF1hxP25FdvLWodVcYkMKnh1Pt/ioAgXE7T/ALoFr3hujuEbVayxEyvFJ3/BrwBNl0uxiODWqfpU+/8AmiGLoOcgHt7VMjU6seYu2b1j+bbZB3Ix+tViD0r1Yc+WQ0NA6+xpe9oNFey1ryySRuTFT5a+3nY7VMH2Nal7wRxnT3hcjo3/AL+1IXtLqLE+ZaYAdYkf2rOWNSyqwwHIg1MzmftQjI/1XQOtRRQGwQDXbO2+oEjrPzXfY0Gzrv8AkOj0mbN7+Jzwh4/WlE/5DqPE7nlW9E/lH6nHqj+1anh/hOk0Nm0j6dHfaJLoDJ+9aoS1bUFLexV5gQIr0+PK8xcYqYjI70CmfmrtZsOru7G3LOCKWLQRXJ0hlbkD1GrEKtkUtMiakGDiinFOYJj4NM2ULKdjFfaazQZOTFWou4+i4fg1UadlrvqFwE7eop1CVAJz/qldERbWH3MDyZ4p0XLAwVJnqa1GautuCu0RPQ1ZumTNKkW/MUoYB5WentV0FLpUZAqsmrbmMCuvINRaZASAetSSxVQBg8mrNuBxNaR5hgU1BBzHJ/tQARbcdv2Na3iWkEG9bAUqM+9ZgANxhjJ/yK52Y6S6E8IfciiXF32MHH6UTWmXSo56wRQNyp9iKgEYtMP6f2NE2Nv3H71IE3GHRj09xQiTantB/agMD8Vgfzd8cigH8v3EH9qk8qRzBH6UQH4rL0bpxzVEH8p+0/FGHPmFSQQeN3SarBm0Z5EH9jRMPoYe4/cUFVzS6TUKWu2AGjJWk73gc5018GeFetIAeaRgBu57ihGbR7rDfpg1Mi7Y8/d0GpsTvssR3XIpfHevWeY6hDJI+mDnihumx5hL6dHJyDzip8tTskNVrnK+Tas6ZSeT6jU3bdyS2o1Fy6doMEwPsBVrmBbnGCaRv3Cx5NVgu5z7VW3MxRse9Bz0qNJUzzRE55k0AGakCTQX28/VBFXqT+QwKWmBzRrcIWB1ojQtXypEAY61oWNe22JPwYg1iWgCMmB3NN2W2sIZW9mqpjTuMrqHQAH2q2xeBeWzilrQVlO1gD1UmrLVlgwO0/P/AHVQ5auh2CknjFNlyhAMEDrWbbIUh2cK3Y0Zlm9F0EGtSs2H/S8yFg9ZpO/4dbYg2gFOCDP9vigHnDpJHUGpXUtMMCDV8BXrG7w50j1Jj3FZiWiFdmEeWN2e5xW1bvTgxMdetVvpEdLqyfxSDPaKlmkrEMhlaDkD+1cANzp3kd62Ro7aszEAnp7CpNtXIG0CeATUxrWJzan+kg/HSpP5T7R+lbDaCwvKKMe9UXfDgy/guJBna1MNIKPxWXo37ihXNozysH9MGrrlhkKyVmNuTQ7YvMDhW++CKihbhCMHK4/UUQjzyD9L5yYwf+6BZNlp5X1fEYNS30oR0lf3FBCz5TA/UueO3NXJat3UBdWYrjAHFDIGokzteD2mcGgCkSp5UwftQLvbZ4CgfRz96znncRWm0B2kx6QJI9qzDz3qKrYUMSf9UZB3VZbUVFVBIPFQRBp4ptQtHFK3HDcKBQV80QXNCKNS0xMCgvRLYI8xpPaaaNuyVDEbQBgg5pRVWNzTHvQNdYx2HFVGh/GImFX1dyc1D6+4RtDxWbuM+5q1fQsgye8VNMNhyclzPerEVm+m6Afmsx7jd6m1cIEg5+Zppjctpq7bAq4uDsetNLee7COhk9D+xrFs6xwIeGX2P/sVoW/EAYYZYcz1rUrNhxLhVtpkDpP704jwsj6Dj4NZb3hc/ETOMinNLfQ2WUmQa1KlhxW3AjrGKoQ5DTHzQW7vqJngUJbiqi9hdJ3Ru+M1C3ip5+xFVI8HBI9xVu43BDes94yKCXVLwO7aCftNZmqseUwZSSIj4rSCFQGkEVYQGtxCEHqRin6S4xBA1BBiGznoCKFZNl1Myo3fcU5qLbW4lFUZghRH60uSF1JlcNntM81hoDZto3QHbz3yKG8G3hkEhgCdvANGiwly2Y3AET1kdqts3yluNzAcwAKKxncmWYk1SRJo2IJ9q5RNRQKtXWreaJEk1etsgTQWoo8syJrN1abbrdvitIYIHtSniFuHZt3WINBnxRpJIUYk1WTXLMzJqKZvQAAPpHPvVTkyZ560QfdEiCKquHJmpRKsA2AS3+Kl3HUwfegDhRk5PQVVcdTys0FhY9IPwaiOxg+1VDaMhQPtQXNStpZMY96BtbpUwTNXJfhsHNY6661ebarDd2mrVuEwwPtVG3avlCQDg0wmoK8GJrFt3HAG4gUwl3kHmmmNy1qRgT80ytwOecV54X4yDirbWsYERNWVmx6JUZuDUAXbbdTWbZ1hJEma1dLqww2mCOorUrNhqy24Gcd6MsqsQRB6nofmq9gRhct5TqO1FeXcrTyBIJ6jtWkQrG2+1huttwex7VRrdEtxRcs4YDjoaVt3Ifbvlegb/dPLeKAE/B7GpurmMrdtvhpiQDgcdCKrgW2ZCY2kgZjFaPiOlAC3beOsfNIXbF28Ve2DkZnOazYsrF5MfrTVq2W4qi1aJIJBNamktEfUMRUjVCmlPki5wJiaJoCADMiad16lEsIshCJxSNyJUc+n96tiQTCbvE4Xnml9VbRy5dyoBOKtdgLx+3NUXb6guCRknBqDKcANjIqVzkmBRXF5I4oOYnpUaWKsmSaq1P1/NWIJ9qi6PTPY0FSqMsemKruOq8c0TYWJ+TVBV3OPSP7mooLjseK834szHWMHJIAEA8RXpfK+/wAml9V4cmq2kwGH0spyKvNxLNjzWns3HuTZjcuSdwFb2iuai3aKXdKzo2N6mcVbp/DFQjzT5scbuR960lt2ww9KhhwYzWrdSTCIuneoDswJg7hBHzVi32KgQYzzjFOXFR5PpFwZDRRrpbN3ZjAyenNTDS9t2Y7mZdoGAP8AdL63xaxpW2b1b+raetN3/C7TggLj2cgmsDX+AX0uFrLIV6Kzeqkha19B43avNtXJ7TmvQ6XVBgGU18wCNbvbWJDg4A5n2r2nh924lq2Lx9cCTV6mJPXu9FqAywfpbBpl7hs2tzDcq8/Feb0GqNu4N30mty5dFzSXHAkRJH+a1L4zZ6RaPPJT6GMim7RwEMZkH3xSKEbonBzTG4kr3ArEaOEh9OQOQJArNVvL3KFkT/VTqvtUMOQJ+aSvIGusU2wTkE8HtWqkef01y4MSZ6EV6Hw+6uo/DLttgGZnNeSa/cjbbjPJPSm/BdRc0JKXFNy00wJgj4rMuNWPR+IXm81VcEBBAFIXbuR1xVWp1RuPu3MZHJ5pZnJPNW1JB3rxLGlbjEzVkSajZNRVdv6COtCeavS3GfaqnEMaiomBUkmIoIM+1d9zQC61S89KY5FVEZqVYgLtSIEnmqyGY+mQParuvehKnlv06VBW34aztz3FY3iHi16y2xZXtNbN3eykLgnr2rE8T0nmruWMcTW+WaRXxS+Qd7b16A1reGeMbSm8ll6g9K88ti6SYXAxNbHhXh25Q1z0ia3cZj19q/bvKrLIB7RR3NFYv8xJ7iaU0VrylAQzH5TWrp32OCyyh68/Y1hpl3vC/wCHId0Dx9LEZAqvy+xzXrDZtanTlLYAYj0jo3t7Vh6jSbAWSRtMMp5WlhKr0hM7W5Br0HmizpGDHDjatYOmHrBIyP71oaly7LZAMId01IVaFO9QO2KeQLCyYLQo/wAVXY2myruPxFGF6nNUKWdrgJUMZ+x9q1PEWXLpCoByrETS+oS4zh0BAYSZHWpDb9O2SSIYA0xZuKqQUZs8hv8Aug8wLYAHXNWEgbQMVxyFriMj4rLSSTI+KnljXRDxxjirAv4h56ZFVEKkvETmrLaye2TR2lm6cA+qrLH/AOh15oK0QeUdwI9NJXBDGDIpu9jTjLDHHSkSSTUVB+aCamoMTAqAQ2eaIiVnrUERmKjNFdxNC5jg0ZPQio2BhiopS6tx1YByJ6jpWRqNNrrQ9J85a9CUPao2VZcSzXmUv39wDadhHYVq6K9kB7ToPjitIWgeBU+VNX6TDFgoygU/bY29pmQxgmsy2sCCYjgimLd1lRwchsf91NXG1ptRbPJCkGD/ALqdcpa8bkSGw1ZWnLDkbiRGRWtpLdy4ApBAIklsAVqXWbMV2dKq2XvEgAERPNHcc+hxCySPT+9HfC+tEJYKuMYkZqrmwSIG0hpFVEuZuBpLblyeMipnbqSQByGAb3qH9SId27a0QOQDXOJNsxyCp3d6DrcLce2zkCSp60NudgBBkdjRuSl4NIXcoIHIxVd07LrhQWBO6R1mgyCPUJ7UREv3wKkj1kcEAYoiPxG56CRUV238VgPbB6US4vMCYO6pAm62N3q60VrN0wwHr60BWhNzKky5orBMflODQ2Y3SdwlicV1kejKg+k5FBVfk2FCyccUiadvv+Gq/VikjzUqxB4xzQgBYipqDUVzGuXIriJNCM5FARFDB6UXSpUUEDdRiTzRBasW3xQB5ZMRg+1F5Fw8Sabt2gOafsaYspgfFWRNY62XBAKn9Kcs6G+WjyyBEmRW3ashLYLQW6Cr1c3AsL7H3rU4ZvRHTeHCy6NcbAjdNWa28TqgqsAFjHSmfEUZLChFkDkg5FZj5ZTHK/m9qt88Se+utwt5lkgSRjrUWlJVl2CdpGDxUuSt+Z2yA2OKkQuobBI3TI61FCDv07jcCIDe5iuJmzOSVIMHgVNoEXCkKclc9Ki2ZtsjPyCsHqaCXxbtsBtAaCeZmjOnGoCszrIG2ql9VhvSwO3cOwijS4QuFtkHOaDKibjRByBmiH85sx6o+K5BNxpU5bkdaK1JuYg+qoqEzdJIbL9KKzJfhW9RqLJG4HfEsTmpsgYJQjk4oOsGAPXGDzU2sW/pYeg1FqdnQjaTXIR5Zhvycd6Cm8noDcmOnFKkVoMpNogDZAzSj2HUFolR1FSqoiuINFGaILNQV7cY61wWKt2/4o2slYnrRSu0hjRKuaaNg7A0QDiqlT1UNSoyKZtieBVaJJmm7CYj9asSr7en3CRyM4p+ydlnenrA5jmltIwtXlDn0sM00qh7zC2dp4kY3VuMVIJugSD80zaHlkwSSeY60Cp5X1tsc8DvS/8AFEBtuGgkCKuoPxO4r2053K0NFItlbf5oJHxREs6XGYeojduBqD6rDSQQCGjrWbdaniHEeWQNsgjPWuuSLisTBZR9PtUtBtCJJDdeIrnEW0aNkMQfeoIaPOJA3AwZ61IJTUNEDO6D0mouf/ExM4KyvSufLoQN25YO7mRVHWoS6yEkAMQfg0NtQFgpkGMUbEi7g7NyggdKqvlUvNI3bvVIOKBGyRuB3RJmpswYJU8ziotSE4BgE11qAmG4U8jmoorG6AcHBNRaICCHj0nBrkAFvgghT9qldwtNxATpQcgHlmUIOw57US7vKeYI2ZNACBbaG/LxjNTgW3O0ggc9qAgR5TgNOOO9HH4bnbtIiD0FCSfJuboiBJHPNduHlOFbccenvmgRuqVuGRGahWI96Z1SiJgg0nUqmVImMRWhpTakC6NwIiKyFMU1YVnaFpKVtX7CtpTtEZ3D3ms5NASs4E5k1sadTb8MK3l3ZkTShPpTaZwea1YxKS8pbI9Rk1y3lUOAMkYqzUk/mEdqRyWqVo3YDXHEkmODW1YsSB35rJ0AO+RmvQ6ZSqzE4x7VrlnolrHDXrSD1bOfmlLQIbbuHJBmrdRJvs7KVk8jFVkRdMKCJmpVgLQBEeoSCIqEBZGG0SVOR0o1JW8RuiG4PShtbVu7TuADEYqCFO6w43AgrMdTFRINlomRBAPFTYU7o2AnIrrI3KVL8qVM0HN/JJjbtIMiuuZtqSd21uBg5obZDWyIYErAHNSstZcbQJWZHSKDniLZAJgkHd2q1bHnKCViMYNVTvsPkHAYDvFSHAHNzPYmqMtdottEg7cVIJFp5AHp5FAGLBkPBAo7i7LLkEmAMH5qK6YtP6p9PHeokeW8Ag7evFQ38i4QADjgUIcuGU8GKC1ifKeQIgCRUEgWnhpwMd6G6NllyCTxyfeofFm4RjI4oDLAWmgEHEE8c1z3SLLzEYyOaVN1mVlJwSKXvM205NBfdvh2JDSKoZ2P0j7mlbLE3SCcU0vBrNVYhO2TWhpH2kEms4AYxMV1l23tBjNB6qzrA1vysMCMg0tqXRGXJCgmKR0lxt+6ciqtY5UsBgTW9ZxdqLgAmkjdKvmg8xnVAx6VRdYgkzkVmtNzSXWstJAgifkV6HTaoOgAMiO1YHh1w3NNsYAhQWUxkGr9JefzeYntWp4zZrdubLq7W4NZettCzfOfSRgg09p3JBqnxEkWhHetVmEHzcJA3AgGTzUMWF9oIHBg9Kg/iOpODtjFdcxcEjdKAyaw04lU1Dgkj1TIrl9N5oQMA2PiovEpfhcAoMV313CxJBIExQTalLpXeBtaMjios7Vfa24BWKnNc8fxDggHCmT9qi67W79zbwIMUE2AZ2lAeVxFRbBKAFwSuDM0SDdcdpKkmcd6qvPsv3FCgwxyaD//2Q==" alt="또니 실사 사진">
     <div id="bubble" class="bubble">또니한테 맛있는 간식을 골라줘!</div>
     <div class="foodcard">
@@ -64,6 +71,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sa
       <div id="hint" class="hint">작게 잘라서 조금</div>
       <div class="question">또니에게 줘도 될까?</div>
     </div>
+    <div id="timerWrap" class="timerWrap"><div id="timerBar" class="timerBar"></div></div>
   </div>
   <div class="actions">
     <button id="yes" class="yes">😋 냠냠 줘!</button>
@@ -71,15 +79,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sa
   </div>
   <div>
     <div class="progress"><div id="bar" class="bar"></div></div>
-    <div class="note">게임은 학습용이야. 실제 급여는 또니의 알레르기·질환과 수의사 지침을 우선해줘.</div>
+    <div class="note">실제 급여는 알레르기·질환·수의사 지침을 우선해줘.</div>
   </div>
 </div>
-<div id="overlay" class="overlay"><div class="result">
-  <div class="big" id="resultEmoji">🏆</div>
-  <h2 id="resultTitle">또니가 배부르게 먹었어!</h2>
-  <p id="resultText"></p>
-  <button id="again">한 판 더!</button>
+
+<div id="startOverlay" class="overlay show"><div class="modal">
+  <div class="big">🐶🎮</div><h2>또니 간식 챌린지</h2>
+  <p>레벨을 클리어하면 다음 단계가 열려!<br>뒤로 갈수록 제한시간과 콤보가 추가돼.</p>
+  <div id="stageList" class="stageList"></div>
 </div></div>
+
+<div id="resultOverlay" class="overlay"><div class="modal">
+  <div class="big" id="resultEmoji">🏆</div>
+  <h2 id="resultTitle">레벨 클리어!</h2>
+  <p id="resultText"></p>
+  <button id="nextBtn" class="primary">다음 레벨 →</button>
+  <button id="retryBtn" class="secondary">다시 도전</button>
+  <button id="stagesBtn" class="secondary">레벨 선택</button>
+</div></div>
+
 <script>
 (function(){
 "use strict";
@@ -94,79 +112,150 @@ const foods=[
  {e:"🍉",n:"수박",ok:true,h:"씨·껍질 제거하고 조금",msg:"수박 시원하다!"},
  {e:"🎃",n:"단호박",ok:true,h:"양념 없이 익혀서 조금",msg:"포근한 단호박 냠!"},
  {e:"🥚",n:"달걀",ok:true,h:"완전히 익혀서 조금",msg:"익힌 달걀 맛있다!"},
+ {e:"🍚",n:"흰쌀밥",ok:true,h:"간 없이 소량",msg:"간 안 한 밥은 조금!"},
+ {e:"🥦",n:"브로콜리",ok:true,h:"작게 잘라 소량",msg:"브로콜리도 조금은 좋아!"},
  {e:"🍫",n:"초콜릿",ok:false,h:"강아지에게 위험해",msg:"초콜릿은 안 돼! 잘 막아줬어."},
  {e:"🍇",n:"포도·건포도",ok:false,h:"강아지에게 위험해",msg:"포도는 절대 안 돼!"},
- {e:"🧅",n:"양파",ok:false,h:"익혀도 강아지에게 위험해",msg:"양파는 안 돼!"},
+ {e:"🧅",n:"양파",ok:false,h:"익혀도 위험해",msg:"양파는 안 돼!"},
  {e:"🧄",n:"마늘",ok:false,h:"강아지에게 위험해",msg:"마늘도 피해야 해!"},
  {e:"🍬",n:"자일리톨 간식",ok:false,h:"자일리톨은 매우 위험해",msg:"자일리톨은 절대 안 돼!"},
  {e:"☕",n:"커피",ok:false,h:"카페인은 위험해",msg:"커피는 사람만!"},
  {e:"🍺",n:"술",ok:false,h:"알코올은 위험해",msg:"술은 절대 안 돼!"},
- {e:"🦴",n:"익힌 뼈",ok:false,h:"부서져 다칠 수 있어",msg:"익힌 뼈는 위험해!"}
+ {e:"🦴",n:"익힌 뼈",ok:false,h:"부서져 다칠 수 있어",msg:"익힌 뼈는 위험해!"},
+ {e:"🍪",n:"초코 쿠키",ok:false,h:"초콜릿이 들어가면 위험해",msg:"초코 쿠키도 안 돼!"},
+ {e:"🍇",n:"건포도빵",ok:false,h:"건포도 때문에 위험해",msg:"건포도빵도 안 돼!"},
+ {e:"🧁",n:"자일리톨 케이크",ok:false,h:"자일리톨 함유 제품은 위험해",msg:"자일리톨은 꼭 확인!"},
+ {e:"🍗",n:"양념 치킨",ok:false,h:"기름·양념·뼈 때문에 피하기",msg:"양념 치킨은 안 돼!"}
 ];
-let deck=[],idx=0,score=0,hearts=3,locked=false,rounds=12;
-let best=Number(localStorage.getItem("ddoniSnackBest")||0);
+
+const stages=[
+ {name:"간식 새싹",desc:"천천히 OX · 8문제",rounds:8,need:6,time:0,combo:false},
+ {name:"간식 탐정",desc:"조금 더 헷갈리게 · 10문제",rounds:10,need:7,time:0,combo:false},
+ {name:"스피드 냠냠",desc:"6초 안에 선택 · 10문제",rounds:10,need:7,time:6,combo:false},
+ {name:"콤보 챌린지",desc:"5초 제한 + 연속정답 보너스 · 12문제",rounds:12,need:9,time:5,combo:true},
+ {name:"또니 마스터",desc:"4초 제한 · 15문제 · 최종단계",rounds:15,need:12,time:4,combo:true}
+];
+
+let level=1,deck=[],idx=0,score=0,correct=0,hearts=3,combo=0,locked=false,timer=null,timerStart=0;
+let unlocked=Math.max(1,Number(localStorage.getItem("ddoniUnlockedLevel")||1));
+let bestBy=JSON.parse(localStorage.getItem("ddoniBestByLevel")||"{}");
 const $=id=>document.getElementById(id);
-$("best").textContent=best;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function newGame(){
-  deck=shuffle(foods.slice()).slice(0,rounds);
-  idx=0;score=0;hearts=3;locked=false;
-  $("overlay").classList.remove("show");
+function showStages(){
+  $("resultOverlay").classList.remove("show");
+  $("startOverlay").classList.add("show");
+  $("stageList").innerHTML=stages.map((s,i)=>{
+    const n=i+1,open=n<=unlocked,best=bestBy[n]||0;
+    return '<button class="stageBtn '+(open?'':'locked')+'" '+(open?'onclick="window.ddoniStart('+n+')"':'disabled')+'>'+
+      '<div><div class="sname">'+(open?'':'🔒 ')+'LV.'+n+' '+s.name+'</div><div class="sdesc">'+s.desc+(best?' · 최고 '+best+'점':'')+'</div></div>'+
+      '<div class="stageNum">'+(open?'▶':'🔒')+'</div></button>';
+  }).join("");
+}
+window.ddoniStart=startLevel;
+
+function startLevel(n){
+  level=n;idx=0;score=0;correct=0;hearts=3;combo=0;locked=false;
+  clearTimer();
+  const st=stages[level-1];
+  let pool=foods.slice();
+  if(level===1) pool=foods.filter(f=>!["초코 쿠키","건포도빵","자일리톨 케이크","양념 치킨"].includes(f.n));
+  deck=shuffle(pool).slice(0,st.rounds);
+  $("startOverlay").classList.remove("show");
+  $("resultOverlay").classList.remove("show");
   updateHud();showFood();
 }
 function updateHud(){
+  const st=stages[level-1];
+  $("level").textContent="LV."+level;
   $("score").textContent=score;
   $("hearts").textContent="❤️".repeat(Math.max(0,hearts))+"🖤".repeat(Math.max(0,3-hearts));
-  $("bar").style.width=(idx/rounds*100)+"%";
+  $("best").textContent=bestBy[level]||0;
+  $("bar").style.width=(idx/st.rounds*100)+"%";
+  $("combo").style.display=(st.combo&&combo>=2)?"block":"none";
+  $("combo").textContent="🔥 COMBO "+combo;
 }
 function showFood(){
-  if(idx>=rounds||hearts<=0)return finish();
+  clearTimer();
+  const st=stages[level-1];
+  if(idx>=st.rounds||hearts<=0)return finish();
   const f=deck[idx];
-  $("emoji").textContent=f.e;$("name").textContent=f.n;$("hint").textContent=f.h;
+  $("emoji").textContent=f.e;$("name").textContent=f.n;
+  $("hint").textContent= level>=2 ? (idx%2===0?"힌트 없음! 또니를 지켜줘 🐾":f.h) : f.h;
   $("bubble").textContent="또니에게 줘도 될까?";
   locked=false;updateHud();
+  if(st.time>0) startTimer(st.time);
+  else $("timerWrap").style.display="none";
+}
+function startTimer(sec){
+  $("timerWrap").style.display="block";
+  timerStart=Date.now();
+  $("timerBar").style.width="100%";
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    const left=Math.max(0,1-(Date.now()-timerStart)/(sec*1000));
+    $("timerBar").style.width=(left*100)+"%";
+    if(left<=0){clearTimer();timeout();}
+  },40);
+}
+function clearTimer(){if(timer){clearInterval(timer);timer=null}}
+function timeout(){
+  if(locked)return;
+  locked=true;hearts--;combo=0;
+  $("bubble").textContent="⏰ 시간 초과! 다음엔 더 빨리!";
+  animateDog(false);sparkle("⏰");
+  idx++;updateHud();setTimeout(showFood,750);
 }
 function sparkle(text){
   const s=document.createElement("div");s.className="spark";s.textContent=text;
   s.style.left=(25+Math.random()*50)+"%";s.style.top=(38+Math.random()*20)+"%";
   $("scene").appendChild(s);setTimeout(()=>s.remove(),700);
 }
-function choose(give){
-  if(locked)return;locked=true;
-  const f=deck[idx],correct=(give===f.ok);
+function animateDog(ok){
   const dog=$("dog");
-  if(correct){
-    score+=10;
-    $("bubble").textContent=f.msg;
-    dog.classList.remove("nope");void dog.offsetWidth;dog.classList.add("happy");
-    sparkle(f.ok?"💖":"✨");
+  dog.classList.remove("happy","nope");void dog.offsetWidth;
+  dog.classList.add(ok?"happy":"nope");
+}
+function choose(give){
+  if(locked)return;locked=true;clearTimer();
+  const f=deck[idx],ok=(give===f.ok),st=stages[level-1];
+  if(ok){
+    correct++;combo++;
+    let add=10;
+    if(st.combo&&combo>=2)add+=Math.min(10,(combo-1)*2);
+    score+=add;
+    $("bubble").textContent=f.msg+(add>10?"  +"+add+"점!":"");
+    animateDog(true);sparkle(st.combo&&combo>=3?"🔥":"💖");
   }else{
-    hearts--;
-    $("bubble").textContent=f.ok?"앗! 이건 조금은 먹어도 돼.":"앗! "+f.n+"은(는) 또니에게 위험해!";
-    dog.classList.remove("happy");void dog.offsetWidth;dog.classList.add("nope");
-    sparkle("💥");
+    hearts--;combo=0;
+    $("bubble").textContent=f.ok?"앗! 이건 소량은 먹어도 돼.":"앗! "+f.n+"은(는) 또니에게 위험해!";
+    animateDog(false);sparkle("💥");
   }
-  idx++;updateHud();
-  setTimeout(showFood,850);
+  idx++;updateHud();setTimeout(showFood,780);
 }
 function finish(){
-  $("bar").style.width="100%";
-  if(score>best){best=score;localStorage.setItem("ddoniSnackBest",String(best));$("best").textContent=best}
-  let title,emoji;
-  if(hearts<=0){emoji="😵";title="또니 배가 깜짝 놀랐어!";}
-  else if(score>=100){emoji="🏆";title="또니 간식 박사!";}
-  else if(score>=70){emoji="🐶💖";title="또니가 아주 만족했어!";}
-  else{emoji="🐾";title="한 번 더 하면 더 잘할 수 있어!";}
-  $("resultEmoji").textContent=emoji;$("resultTitle").textContent=title;
-  $("resultText").textContent="이번 점수 "+score+"점 · 최고점수 "+best+"점";
-  $("overlay").classList.add("show");
+  clearTimer();
+  const st=stages[level-1],cleared=correct>=st.need&&hearts>0;
+  if(score>(bestBy[level]||0)){bestBy[level]=score;localStorage.setItem("ddoniBestByLevel",JSON.stringify(bestBy))}
+  if(cleared&&level<stages.length&&unlocked<level+1){
+    unlocked=level+1;localStorage.setItem("ddoniUnlockedLevel",String(unlocked));
+  }
+  $("resultEmoji").textContent=cleared?(level===5?"👑🐶":"🏆🐶"):"🐾";
+  $("resultTitle").textContent=cleared?(level===5?"또니 마스터 완성!":"LV."+level+" 클리어!"):"조금만 더!";
+  $("resultText").innerHTML=
+    stages[level-1].name+"<br><b>"+correct+"/"+st.rounds+" 정답 · "+score+"점</b><br>"+
+    (cleared?(level<5?"다음 레벨이 열렸어! 난이도가 올라간다 🔥":"모든 레벨을 정복했어! 🎉"):
+    "클리어 조건은 "+st.need+"개 이상 정답이야.");
+  $("nextBtn").style.display=(cleared&&level<5)?"block":"none";
+  $("resultOverlay").classList.add("show");
+  updateHud();
 }
 $("yes").addEventListener("click",()=>choose(true));
 $("no").addEventListener("click",()=>choose(false));
-$("again").addEventListener("click",newGame);
+$("retryBtn").addEventListener("click",()=>startLevel(level));
+$("nextBtn").addEventListener("click",()=>startLevel(level+1));
+$("stagesBtn").addEventListener("click",showStages);
 
-// iOS zoom guards
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
@@ -174,7 +263,7 @@ document.addEventListener("touchstart",e=>{if(e.touches&&e.touches.length>1)e.pr
 document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
 let lastTouch=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-lastTouch<300)e.preventDefault();lastTouch=n},{passive:false});
 
-newGame();
+showStages();
 })();
 </script>
 </body>
