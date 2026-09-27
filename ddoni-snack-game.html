@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#fff7ed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>또니 간식 타임</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:linear-gradient(180deg,#fff7ed 0%,#fffbeb 54%,#eff6ff 100%);color:#252525}
+.app{width:min(100vw,430px);height:100svh;margin:0 auto;padding:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:8px;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title{font-size:20px;font-weight:950}.back{background:#fff;border:1px solid #e5e7eb;border-radius:13px;padding:8px 11px;text-decoration:none;color:#333;font-weight:850;font-size:12px}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.hud div{background:rgba(255,255,255,.88);border:1px solid #f0e4d8;border-radius:13px;text-align:center;padding:7px 3px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+.hud b{display:block;font-size:16px}.hud span{font-size:10px;color:#7c6f64}
+.scene{min-height:0;background:rgba(255,255,255,.78);border:1px solid #f0e4d8;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:8px 10px;box-shadow:0 16px 35px rgba(145,91,32,.10)}
+.spark{position:absolute;font-size:20px;animation:pop .65s ease-out forwards;pointer-events:none}
+@keyframes pop{from{opacity:1;transform:translateY(0) scale(.8)}to{opacity:0;transform:translateY(-70px) scale(1.35)}}
+.dog{font-size:clamp(74px,23vw,100px);line-height:1;filter:drop-shadow(0 7px 8px rgba(0,0,0,.10));transition:transform .18s}
+.dog.happy{animation:happy .45s ease}
+.dog.nope{animation:nope .35s ease}
+@keyframes happy{0%,100%{transform:scale(1)}35%{transform:scale(1.12) rotate(-5deg)}70%{transform:scale(1.1) rotate(5deg)}}
+@keyframes nope{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.bubble{margin-top:6px;background:#fff;border:2px solid #f1dcc7;border-radius:18px;padding:8px 13px;font-weight:900;font-size:13px;min-height:38px;display:flex;align-items:center;justify-content:center;text-align:center}
+.foodcard{margin-top:10px;width:min(92%,310px);background:#fff;border:1px solid #eee;border-radius:20px;padding:11px 14px;text-align:center;box-shadow:0 10px 24px rgba(0,0,0,.07)}
+.foodemoji{font-size:clamp(48px,16vw,68px);line-height:1.05}.foodname{font-size:22px;font-weight:950;margin-top:4px}.hint{font-size:11px;color:#8a7d72;margin-top:4px;min-height:16px}
+.question{font-size:13px;font-weight:850;color:#5d5148;margin-top:7px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions button{border:0;border-radius:18px;min-height:58px;font:inherit;font-weight:950;font-size:16px;color:#fff;touch-action:manipulation}
+.yes{background:linear-gradient(180deg,#22c55e,#16a34a)}.no{background:linear-gradient(180deg,#fb7185,#e11d48)}
+.actions button:active{transform:scale(.98)}
+.progress{height:8px;background:#fff;border-radius:99px;overflow:hidden;border:1px solid #eee}.bar{height:100%;width:0;background:linear-gradient(90deg,#fb923c,#facc15);transition:width .25s}
+.note{text-align:center;font-size:9px;color:#8b7f76;line-height:1.25}
+.overlay{position:fixed;inset:0;background:rgba(36,27,20,.62);display:none;align-items:center;justify-content:center;padding:22px;z-index:20}
+.overlay.show{display:flex}.result{width:min(100%,340px);background:#fff;border-radius:24px;padding:24px;text-align:center;box-shadow:0 20px 55px rgba(0,0,0,.22)}
+.result .big{font-size:58px}.result h2{margin:7px 0}.result p{color:#6b625b;line-height:1.5;font-size:13px}
+.result button{width:100%;border:0;border-radius:15px;padding:13px;background:#f97316;color:#fff;font-weight:950;font-size:16px}
+@media(max-height:720px){
+  .app{gap:5px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
+  .title{font-size:17px}.back{padding:6px 9px}.hud div{padding:4px 2px}.hud b{font-size:14px}
+  .dog{font-size:68px}.bubble{padding:5px 10px;min-height:30px;font-size:11px}.foodcard{margin-top:5px;padding:7px 11px}
+  .foodemoji{font-size:44px}.foodname{font-size:18px}.question{font-size:11px;margin-top:4px}.hint{font-size:9px}
+  .actions button{min-height:48px;font-size:14px}.note{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div class="title">🐶 또니 간식 타임</div><a class="back" href="./">← 게임 홈</a></div>
+  <div class="hud">
+    <div><b id="score">0</b><span>점수</span></div>
+    <div><b id="hearts">❤️❤️❤️</b><span>하트</span></div>
+    <div><b id="best">0</b><span>최고점수</span></div>
+  </div>
+  <div class="scene" id="scene">
+    <div id="dog" class="dog">🐶</div>
+    <div id="bubble" class="bubble">또니한테 맛있는 간식을 골라줘!</div>
+    <div class="foodcard">
+      <div id="emoji" class="foodemoji">🥕</div>
+      <div id="name" class="foodname">당근</div>
+      <div id="hint" class="hint">작게 잘라서 조금</div>
+      <div class="question">또니에게 줘도 될까?</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="yes" class="yes">😋 냠냠 줘!</button>
+    <button id="no" class="no">🙅 안 돼!</button>
+  </div>
+  <div>
+    <div class="progress"><div id="bar" class="bar"></div></div>
+    <div class="note">게임은 학습용이야. 실제 급여는 또니의 알레르기·질환과 수의사 지침을 우선해줘.</div>
+  </div>
+</div>
+<div id="overlay" class="overlay"><div class="result">
+  <div class="big" id="resultEmoji">🏆</div>
+  <h2 id="resultTitle">또니가 배부르게 먹었어!</h2>
+  <p id="resultText"></p>
+  <button id="again">한 판 더!</button>
+</div></div>
+<script>
+(function(){
+"use strict";
+const foods=[
+ {e:"🍗",n:"닭가슴살",ok:true,h:"양념 없이 완전히 익혀서 조금",msg:"냠냠! 담백한 닭가슴살 좋아!"},
+ {e:"🍠",n:"고구마",ok:true,h:"익혀서 작은 양만",msg:"달콤한 고구마 냠!"},
+ {e:"🥕",n:"당근",ok:true,h:"작게 잘라서 조금",msg:"아삭아삭 당근!"},
+ {e:"🥒",n:"오이",ok:true,h:"작게 잘라서 조금",msg:"시원한 오이 냠냠!"},
+ {e:"🫐",n:"블루베리",ok:true,h:"몇 알만",msg:"작고 맛있는 블루베리!"},
+ {e:"🍎",n:"사과",ok:true,h:"씨·심 제거하고 조금",msg:"사과는 씨 빼고 냠!"},
+ {e:"🍌",n:"바나나",ok:true,h:"당이 많으니 조금",msg:"바나나는 한입만!"},
+ {e:"🍉",n:"수박",ok:true,h:"씨·껍질 제거하고 조금",msg:"수박 시원하다!"},
+ {e:"🎃",n:"단호박",ok:true,h:"양념 없이 익혀서 조금",msg:"포근한 단호박 냠!"},
+ {e:"🥚",n:"달걀",ok:true,h:"완전히 익혀서 조금",msg:"익힌 달걀 맛있다!"},
+ {e:"🍫",n:"초콜릿",ok:false,h:"강아지에게 위험해",msg:"초콜릿은 안 돼! 잘 막아줬어."},
+ {e:"🍇",n:"포도·건포도",ok:false,h:"강아지에게 위험해",msg:"포도는 절대 안 돼!"},
+ {e:"🧅",n:"양파",ok:false,h:"익혀도 강아지에게 위험해",msg:"양파는 안 돼!"},
+ {e:"🧄",n:"마늘",ok:false,h:"강아지에게 위험해",msg:"마늘도 피해야 해!"},
+ {e:"🍬",n:"자일리톨 간식",ok:false,h:"자일리톨은 매우 위험해",msg:"자일리톨은 절대 안 돼!"},
+ {e:"☕",n:"커피",ok:false,h:"카페인은 위험해",msg:"커피는 사람만!"},
+ {e:"🍺",n:"술",ok:false,h:"알코올은 위험해",msg:"술은 절대 안 돼!"},
+ {e:"🦴",n:"익힌 뼈",ok:false,h:"부서져 다칠 수 있어",msg:"익힌 뼈는 위험해!"}
+];
+let deck=[],idx=0,score=0,hearts=3,locked=false,rounds=12;
+let best=Number(localStorage.getItem("ddoniSnackBest")||0);
+const $=id=>document.getElementById(id);
+$("best").textContent=best;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function newGame(){
+  deck=shuffle(foods.slice()).slice(0,rounds);
+  idx=0;score=0;hearts=3;locked=false;
+  $("overlay").classList.remove("show");
+  updateHud();showFood();
+}
+function updateHud(){
+  $("score").textContent=score;
+  $("hearts").textContent="❤️".repeat(Math.max(0,hearts))+"🖤".repeat(Math.max(0,3-hearts));
+  $("bar").style.width=(idx/rounds*100)+"%";
+}
+function showFood(){
+  if(idx>=rounds||hearts<=0)return finish();
+  const f=deck[idx];
+  $("emoji").textContent=f.e;$("name").textContent=f.n;$("hint").textContent=f.h;
+  $("bubble").textContent="또니에게 줘도 될까?";
+  locked=false;updateHud();
+}
+function sparkle(text){
+  const s=document.createElement("div");s.className="spark";s.textContent=text;
+  s.style.left=(25+Math.random()*50)+"%";s.style.top=(38+Math.random()*20)+"%";
+  $("scene").appendChild(s);setTimeout(()=>s.remove(),700);
+}
+function choose(give){
+  if(locked)return;locked=true;
+  const f=deck[idx],correct=(give===f.ok);
+  const dog=$("dog");
+  if(correct){
+    score+=10;
+    $("bubble").textContent=f.msg;
+    dog.classList.remove("nope");void dog.offsetWidth;dog.classList.add("happy");
+    sparkle(f.ok?"💖":"✨");
+  }else{
+    hearts--;
+    $("bubble").textContent=f.ok?"앗! 이건 조금은 먹어도 돼.":"앗! "+f.n+"은(는) 또니에게 위험해!";
+    dog.classList.remove("happy");void dog.offsetWidth;dog.classList.add("nope");
+    sparkle("💥");
+  }
+  idx++;updateHud();
+  setTimeout(showFood,850);
+}
+function finish(){
+  $("bar").style.width="100%";
+  if(score>best){best=score;localStorage.setItem("ddoniSnackBest",String(best));$("best").textContent=best}
+  let title,emoji;
+  if(hearts<=0){emoji="😵";title="또니 배가 깜짝 놀랐어!";}
+  else if(score>=100){emoji="🏆";title="또니 간식 박사!";}
+  else if(score>=70){emoji="🐶💖";title="또니가 아주 만족했어!";}
+  else{emoji="🐾";title="한 번 더 하면 더 잘할 수 있어!";}
+  $("resultEmoji").textContent=emoji;$("resultTitle").textContent=title;
+  $("resultText").textContent="이번 점수 "+score+"점 · 최고점수 "+best+"점";
+  $("overlay").classList.add("show");
+}
+$("yes").addEventListener("click",()=>choose(true));
+$("no").addEventListener("click",()=>choose(false));
+$("again").addEventListener("click",newGame);
+
+// iOS zoom guards
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
+document.addEventListener("touchstart",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+let lastTouch=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-lastTouch<300)e.preventDefault();lastTouch=n},{passive:false});
+
+newGame();
+})();
+</script>
+</body>
+</html>
