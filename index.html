@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="미래 발명소">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon-192.png" type="image/png">\n<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <title>미래 발명소</title>
 <style>
 :root{--p:#6d5dfc;--k:#ff6f9f;--ink:#171923;--muted:#6b7280;--line:#e5e7eb}
@@ -65,7 +66,7 @@ function pick(n){s.week=n;save();render()}
 function start(){s.p1=v("p1")||s.p1;s.p2=v("p2")||s.p2;s.a={};s.b={};s.event=null;s.invA=50000;s.invB=50000;nav(1)}
 function problem(){return steps()+'<div class="card"><h2>문제 발견</h2><div class="mission">'+missions[s.week-1]+'</div><div class="grid"><div class="player p1"><h3>🟣 '+esc(s.p1)+'</h3><label>진짜 불편</label><textarea id="qa">'+esc(s.a.problem)+'</textarea></div><div class="player p2"><h3>🩷 '+esc(s.p2)+'</h3><label>진짜 불편</label><textarea id="qb">'+esc(s.b.problem)+'</textarea></div></div><div class="row"><button class="sec" onclick="nav(0)">← 홈</button><button class="pri" onclick="saveProblem()">다음 →</button></div></div>'}
 function saveProblem(){s.a.problem=v("qa");s.b.problem=v("qb");if(!s.a.problem||!s.b.problem)return alert("둘 다 문제를 적어줘.");nav(2)}
-function customer(){return steps()+'<div class="card"><h2>누가 가장 불편할까?</h2>'+pairInput("고객","customer","예: 충전기가 많은 직장인")+'<div class="mission">서로 물어보기: “이 사람은 지금 어떻게 해결하고 있지?”</div><div class="row"><button class="sec" onclick="nav(1)">← 이전</button><button class="pri" onclick="savePair(3,'customer')">다음 →</button></div></div>'}
+function customer(){return steps()+'<div class="card"><h2>누가 가장 불편할까?</h2>'+pairInput("고객","customer","예: 충전기가 많은 직장인")+'<div class="mission">서로 물어보기: “이 사람은 지금 어떻게 해결하고 있지?”</div><div class="row"><button class="sec" onclick="nav(1)">← 이전</button><button class="pri" onclick="savePair(3,\'customer\')">다음 →</button></div></div>'}
 function pairInput(title,key,ph){return '<div class="grid"><div class="player p1"><h3>'+esc(s.p1)+'</h3><label>'+title+'</label><input id="a_'+key+'" value="'+esc(s.a[key])+'" placeholder="'+ph+'"></div><div class="player p2"><h3>'+esc(s.p2)+'</h3><label>'+title+'</label><input id="b_'+key+'" value="'+esc(s.b[key])+'" placeholder="'+ph+'"></div></div>'}
 function savePair(next,key){s.a[key]=v("a_"+key);s.b[key]=v("b_"+key);if(!s.a[key]||!s.b[key])return alert("둘 다 적어줘.");nav(next)}
 function product(){return steps()+'<div class="card"><h2>상품으로 만들기</h2><div class="grid"><div class="player p1"><h3>'+esc(s.p1)+'</h3><label>제품명</label><input id="ap" value="'+esc(s.a.product)+'"><label>해결 방법</label><textarea id="as">'+esc(s.a.solution)+'</textarea><label>가격(원)</label><input id="apr" type="number" value="'+esc(s.a.price)+'"></div><div class="player p2"><h3>'+esc(s.p2)+'</h3><label>제품명</label><input id="bp" value="'+esc(s.b.product)+'"><label>해결 방법</label><textarea id="bs">'+esc(s.b.solution)+'</textarea><label>가격(원)</label><input id="bpr" type="number" value="'+esc(s.b.price)+'"></div></div><div class="row"><button class="sec" onclick="nav(2)">← 이전</button><button class="pri" onclick="saveProduct()">위기 뽑기 🎲</button></div></div>'}
