@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>블록 게임 V2</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f172a}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f172a;touch-action:none;-webkit-text-size-adjust:100%}
 body{color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif}
 .wrap{
   width:min(100vw,430px);
@@ -21,7 +21,7 @@ body{color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Ne
 }
 .top{display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:34px}
 .top b{font-size:18px;white-space:nowrap}
-.back,button{border:0;border-radius:10px;background:#1e293b;color:#fff;font-weight:800;text-decoration:none}
+.back,button{border:0;border-radius:10px;background:#1e293b;color:#fff;font-weight:800;text-decoration:none;touch-action:manipulation}
 .back{font-size:12px;padding:8px 9px;white-space:nowrap}
 .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .stat{background:#111827;border:1px solid #293548;border-radius:9px;text-align:center;padding:4px 2px;min-width:0}
@@ -113,6 +113,18 @@ function fitBoard(){
   }
   addEventListener("resize",fitBoard);
   if(window.visualViewport) visualViewport.addEventListener("resize",fitBoard);
+  let lastTouchEnd=0;
+  document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+  document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+  document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
+  document.addEventListener("touchmove",e=>{
+    if(e.touches&&e.touches.length>1)e.preventDefault();
+  },{passive:false});
+  document.addEventListener("touchend",e=>{
+    const now=Date.now();
+    if(now-lastTouchEnd<=300)e.preventDefault();
+    lastTouchEnd=now;
+  },{passive:false});
   reset();fitBoard();requestAnimationFrame(loop);
 })();
 </script></body></html>
