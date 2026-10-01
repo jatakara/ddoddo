@@ -1,0 +1,97 @@
+{
+  "version": "2026-10-02",
+  "reviewed_at": "2026-10-02",
+  "product": "Architecture Center",
+  "principles": [
+    {
+      "id": "AI-BP-001",
+      "title": "Workflow-first, agent only where judgment adds value",
+      "action": "Deterministic sizing/rules remain code; AI reviews ambiguity, exceptions, missing context, and customer explanation.",
+      "sources": [
+        "OpenAI Agents SDK",
+        "Anthropic Building Effective AI Agents",
+        "Google Agentic AI Architecture"
+      ]
+    },
+    {
+      "id": "AI-BP-002",
+      "title": "Ground every recommendation",
+      "action": "AI receives only retrieved standards/known issues relevant to the architecture and must return evidence IDs.",
+      "sources": [
+        "AWS Enterprise Agentic Architecture",
+        "OpenAI Structured Outputs"
+      ]
+    },
+    {
+      "id": "AI-BP-003",
+      "title": "Structured outputs over free-form chat",
+      "action": "AI review returns a strict schema: confidence, missing_information, risks, recommendations, evidence_ids, escalation_required, next_actions.",
+      "sources": [
+        "OpenAI Structured Outputs"
+      ]
+    },
+    {
+      "id": "AI-BP-004",
+      "title": "Human approval before consequential actions",
+      "action": "AI cannot submit quote, approve exception, alter BOM, or change a standard. It only proposes; human chooses.",
+      "sources": [
+        "OpenAI Guardrails and Human Review",
+        "Microsoft Responsible AI"
+      ]
+    },
+    {
+      "id": "AI-BP-005",
+      "title": "Trace every AI run",
+      "action": "Record architecture ID, model, prompt version, evidence IDs, output, reviewer decision, and latency/cost metadata.",
+      "sources": [
+        "OpenAI Integrations and Observability",
+        "AWS Generative AI Lens"
+      ]
+    },
+    {
+      "id": "AI-BP-006",
+      "title": "Eval before model/prompt promotion",
+      "action": "Historical architecture incidents become regression cases. New prompt/model versions must pass before activation.",
+      "sources": [
+        "OpenAI Agent Evals",
+        "Anthropic Demystifying Evals"
+      ]
+    },
+    {
+      "id": "AI-BP-007",
+      "title": "Route models by task value",
+      "action": "Use a balanced model for routine review; reserve highest-intelligence models for ambiguous/high-risk exception analysis.",
+      "sources": [
+        "OpenAI Model Selection",
+        "Anthropic Model/Eval Guidance"
+      ]
+    },
+    {
+      "id": "AI-BP-008",
+      "title": "Least privilege tool access",
+      "action": "Separate read-only knowledge tools from write tools; require explicit approval for quote/approval/config-changing actions.",
+      "sources": [
+        "OpenAI Agent Safety",
+        "AWS Enterprise Agentic Architecture"
+      ]
+    },
+    {
+      "id": "AI-BP-009",
+      "title": "Treat untrusted text as data, not instructions",
+      "action": "External customer notes are extracted into validated fields before influencing decisions or tool calls.",
+      "sources": [
+        "OpenAI Agent Safety"
+      ]
+    },
+    {
+      "id": "AI-BP-010",
+      "title": "Continuous improvement flywheel",
+      "action": "Capture user corrections and TA approval outcomes, convert repeated failures into rules, issue patterns, or eval cases.",
+      "sources": [
+        "OpenAI Evals",
+        "Anthropic Evals",
+        "Google iterative architecture guidance"
+      ]
+    }
+  ]
+}
