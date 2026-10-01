@@ -1,6 +1,5 @@
-architecture_center.db
-*.db
+.venv/
 __pycache__/
 *.py[cod]
-.venv/
 .env
+.DS_Store

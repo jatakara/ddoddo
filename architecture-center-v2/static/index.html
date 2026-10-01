@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Architecture Center v2</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2f;--line:#253352;--text:#eef3ff;--muted:#9aaccc;--accent:#6ea8fe;--good:#39d98a;--warn:#ffca5c;--bad:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:#0b1020;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
+.app{max-width:1320px;margin:auto;padding:16px}header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:24px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:5px}.badge{border:1px solid var(--line);padding:7px 10px;border-radius:999px;color:#cfe0ff}
+nav{display:flex;gap:8px;overflow:auto;margin:18px 0 14px}nav button{border:1px solid var(--line);background:#10182a;color:#cbd8f1;border-radius:10px;padding:10px 13px;font-weight:800;white-space:nowrap}nav button.active{background:var(--accent);color:#08111e}
+.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px}.card{background:#121a2f;border:1px solid var(--line);border-radius:15px;padding:15px}
+.kpi{grid-column:span 3}.full{grid-column:1/-1}.half{grid-column:span 6}.kpi b{font-size:28px;display:block;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:#aebdd8}
+input,select,textarea{width:100%;background:#0b1425;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}textarea{min-height:88px}
+label{display:block;font-size:12px;color:#b9c7e4;margin:9px 0 5px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.primary,.secondary{border-radius:9px;padding:10px 13px;font-weight:800;cursor:pointer}.primary{background:var(--accent);border:0;color:#07111f}.secondary{background:#10192d;border:1px solid var(--line);color:#fff}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.LOW{background:rgba(57,217,138,.13);color:var(--good)}.MEDIUM{background:rgba(255,202,92,.13);color:var(--warn)}.HIGH{background:rgba(255,107,107,.13);color:var(--bad)}
+.notice{background:#0d1729;border-left:3px solid var(--accent);padding:10px;border-radius:8px;margin-top:8px;font-size:13px}.muted{color:var(--muted);font-size:12px}
+@media(max-width:900px){.kpi,.half{grid-column:1/-1}.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><h1>Architecture Center v2</h1><div class="sub">ERP · UC · Infra Architecture Governance / 자체 DB 이력관리</div></div><div class="badge">SQLite Persistent DB</div></header>
+<nav id="nav">
+<button class="active" data-page="dash">대시보드</button>
+<button data-page="new">사전검토 접수</button>
+<button data-page="history">검토 이력</button>
+<button data-page="adr">ADR</button>
+<button data-page="risk">리스크</button>
+<button data-page="audit">감사로그</button>
+</nav>
+
+<section id="dash" class="page active">
+<div class="grid">
+<div class="card kpi"><span class="muted">전체 검토</span><b id="kTotal">0</b></div>
+<div class="card kpi"><span class="muted">검토 대기</span><b id="kPending">0</b></div>
+<div class="card kpi"><span class="muted">고위험 건</span><b id="kHigh">0</b></div>
+<div class="card kpi"><span class="muted">Open Risk</span><b id="kRisk">0</b></div>
+<div class="card full"><h3>최근 Architecture Review</h3><table><thead><tr><th>ID</th><th>고객사</th><th>User</th><th>서비스</th><th>판정</th><th>Risk</th><th>상태</th><th>등록일</th></tr></thead><tbody id="latestBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="new" class="page">
+<div class="grid">
+<div class="card half">
+<h3>신규 사전검토</h3>
+<div class="formgrid">
+<div><label>고객사</label><input id="customer"/></div>
+<div><label>사용자 수</label><input id="users" type="number"/></div>
+<div><label>서비스</label><select id="service"><option>ERP</option><option>UC</option><option>ERP + UC</option></select></div>
+<div><label>구성</label><select id="shape"><option>통합형</option><option>분리형</option><option>단일노드</option><option>3-Node K8s</option></select></div>
+<div><label>망 환경</label><select id="network"><option>인터넷 가능</option><option>폐쇄망</option><option>DMZ 포함</option></select></div>
+<div><label>DR</label><select id="dr"><option>없음</option><option>백업복구</option><option>Warm DR</option><option>Active-Standby</option></select></div>
+</div>
+<label>특이사항</label><textarea id="memo" placeholder="보안, 외부연계, L7/WAF, DB, Storage, 고객 특수요건"></textarea>
+<div class="toolbar"><button class="primary" onclick="saveReview()">판정 + DB 저장</button></div>
+</div>
+<div class="card half"><h3>판정 결과</h3><div id="result" class="muted">저장 후 판정 결과가 표시됩니다.</div></div>
+</div>
+</section>
+
+<section id="history" class="page">
+<div class="grid"><div class="card full"><h3>Architecture Review 이력</h3>
+<table><thead><tr><th>ID</th><th>고객사</th><th>User</th><th>서비스</th><th>구성</th><th>판정</th><th>Risk</th><th>상태</th><th>변경</th></tr></thead><tbody id="historyBody"></tbody></table>
+</div></div>
+</section>
+
+<section id="adr" class="page">
+<div class="grid">
+<div class="card half"><h3>ADR 등록</h3>
+<label>Review ID (선택)</label><input id="dReview" type="number"/>
+<label>주제</label><input id="dTopic"/>
+<label>결정</label><textarea id="dDecision"></textarea>
+<label>근거</label><textarea id="dRationale"></textarea>
+<label>리스크</label><textarea id="dRisk"></textarea>
+<label>Owner</label><input id="dOwner"/>
+<div class="toolbar"><button class="primary" onclick="saveDecision()">ADR 저장</button></div>
+</div>
+<div class="card half"><h3>ADR 이력</h3><table><thead><tr><th>ID</th><th>Review</th><th>주제</th><th>결정</th><th>상태</th></tr></thead><tbody id="adrBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="risk" class="page">
+<div class="grid">
+<div class="card half"><h3>Risk 등록</h3>
+<label>Review ID (선택)</label><input id="rReview" type="number"/>
+<label>Risk</label><input id="rTitle"/>
+<div class="formgrid"><div><label>가능성</label><select id="rLikelihood"><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></div><div><label>영향</label><select id="rImpact"><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></div></div>
+<label>대응</label><textarea id="rResponse"></textarea><label>Owner</label><input id="rOwner"/>
+<div class="toolbar"><button class="primary" onclick="saveRisk()">Risk 저장</button></div>
+</div>
+<div class="card half"><h3>Risk Register</h3><table><thead><tr><th>ID</th><th>Risk</th><th>L</th><th>I</th><th>Owner</th><th>상태</th></tr></thead><tbody id="riskBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="audit" class="page"><div class="grid"><div class="card full"><h3>Audit Log</h3><table><thead><tr><th>ID</th><th>Entity</th><th>Action</th><th>Detail</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table></div></div></section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); $(b.dataset.page).classList.add('active'); refreshAll();
+});
+async function api(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text());return r.json()}
+function pill(x){return `<span class="pill ${x}">${x}</span>`}
+
+async function loadDashboard(){
+ const d=await api('/api/dashboard');
+ $('kTotal').textContent=d.total_reviews;$('kPending').textContent=d.pending;$('kHigh').textContent=d.high_risk;$('kRisk').textContent=d.open_risks;
+ $('latestBody').innerHTML=d.latest.map(r=>`<tr><td>${r.id}</td><td>${r.customer}</td><td>${r.users}</td><td>${r.service}</td><td>${r.evaluation}</td><td>${pill(r.risk_level)}</td><td>${r.status}</td><td>${r.created_at.replace('T',' ')}</td></tr>`).join('');
+}
+async function saveReview(){
+ const body={customer:$('customer').value.trim(),users:+$('users').value||0,service:$('service').value,shape:$('shape').value,network:$('network').value,dr:$('dr').value,memo:$('memo').value};
+ if(!body.customer){alert('고객사를 입력하세요');return}
+ const r=await api('/api/reviews',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ $('result').innerHTML=`<div class="notice"><b>Review #${r.id}</b><br>판정: <b>${r.evaluation}</b><br>Risk: ${pill(r.risk_level)}<br><br>${r.recommendation}</div>`;
+ await refreshAll();
+}
+async function loadHistory(){
+ const rows=await api('/api/reviews');
+ $('historyBody').innerHTML=rows.map(r=>`<tr><td>${r.id}</td><td>${r.customer}</td><td>${r.users}</td><td>${r.service}</td><td>${r.shape}</td><td>${r.evaluation}</td><td>${pill(r.risk_level)}</td><td>${r.status}</td><td><select onchange="changeStatus(${r.id},this.value)"><option ${r.status==='NEW'?'selected':''}>NEW</option><option ${r.status==='REVIEW'?'selected':''}>REVIEW</option><option ${r.status==='APPROVED'?'selected':''}>APPROVED</option><option ${r.status==='CLOSED'?'selected':''}>CLOSED</option></select></td></tr>`).join('');
+}
+async function changeStatus(id,status){await api(`/api/reviews/${id}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});refreshAll()}
+async function saveDecision(){
+ const body={review_id:+$('dReview').value||null,topic:$('dTopic').value,decision:$('dDecision').value,rationale:$('dRationale').value,risk:$('dRisk').value,owner:$('dOwner').value,status:'DRAFT'};
+ if(!body.topic||!body.decision){alert('주제와 결정을 입력하세요');return}
+ await api('/api/decisions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});refreshAll()
+}
+async function loadADR(){
+ const rows=await api('/api/decisions');$('adrBody').innerHTML=rows.map(r=>`<tr><td>${r.id}</td><td>${r.review_id||''}</td><td>${r.topic}</td><td>${r.decision}</td><td>${r.status}</td></tr>`).join('')
+}
+async function saveRisk(){
+ const body={review_id:+$('rReview').value||null,title:$('rTitle').value,likelihood:$('rLikelihood').value,impact:$('rImpact').value,response:$('rResponse').value,owner:$('rOwner').value,status:'OPEN'};
+ if(!body.title){alert('Risk를 입력하세요');return}
+ await api('/api/risks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});refreshAll()
+}
+async function loadRisks(){
+ const rows=await api('/api/risks');$('riskBody').innerHTML=rows.map(r=>`<tr><td>${r.id}</td><td>${r.title}</td><td>${pill(r.likelihood)}</td><td>${pill(r.impact)}</td><td>${r.owner||''}</td><td>${r.status}</td></tr>`).join('')
+}
+async function loadAudit(){
+ const rows=await api('/api/audit');$('auditBody').innerHTML=rows.map(r=>`<tr><td>${r.id}</td><td>${r.entity_type}#${r.entity_id||''}</td><td>${r.action}</td><td>${r.detail||''}</td><td>${r.created_at.replace('T',' ')}</td></tr>`).join('')
+}
+async function refreshAll(){try{await Promise.all([loadDashboard(),loadHistory(),loadADR(),loadRisks(),loadAudit()])}catch(e){console.error(e)}}
+refreshAll();
+</script>
+</body>
+</html>
