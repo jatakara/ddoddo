@@ -48,7 +48,8 @@
         "상세 설계서 작성",
         "현장 작업"
       ],
-      "risk": "LOW"
+      "risk": "LOW",
+      "suggested_retail": 490000
     },
     {
       "id": "ARC-FULL-001",
@@ -77,7 +78,8 @@
         "상세 LLD",
         "현장 구축"
       ],
-      "risk": "MEDIUM"
+      "risk": "MEDIUM",
+      "suggested_retail": 980000
     },
     {
       "id": "INFRA-RHEL-001",
@@ -104,7 +106,8 @@
         "Application 설치",
         "보안솔루션"
       ],
-      "risk": "LOW"
+      "risk": "LOW",
+      "suggested_retail": 390000
     },
     {
       "id": "INFRA-L7-001",
@@ -132,7 +135,8 @@
         "장비 라이선스",
         "복잡한 WAF 정책"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 910000
     },
     {
       "id": "PKG-ERP-001",
@@ -159,7 +163,8 @@
         "DB 구축",
         "Network 변경"
       ],
-      "risk": "MEDIUM"
+      "risk": "MEDIUM",
+      "suggested_retail": 770000
     },
     {
       "id": "PKG-UC-001",
@@ -186,7 +191,8 @@
         "L7 장비 설정",
         "방화벽 변경"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 980000
     },
     {
       "id": "DB-ORA-INSTALL",
@@ -214,7 +220,8 @@
         "Migration",
         "튜닝"
       ],
-      "risk": "MEDIUM"
+      "risk": "MEDIUM",
+      "suggested_retail": 910000
     },
     {
       "id": "DB-MIG-001",
@@ -240,7 +247,8 @@
       "excludes": [
         "Application 데이터 정합성 검증"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 1680000
     },
     {
       "id": "DB-RESTORE-001",
@@ -265,7 +273,8 @@
       "excludes": [
         "DR Site 구축"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 1120000
     },
     {
       "id": "K8S-3N-001",
@@ -295,7 +304,8 @@
         "Application 배포",
         "L7/FW 장비 변경"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 2240000
     },
     {
       "id": "K8S-DIAG-001",
@@ -321,7 +331,8 @@
         "Major Change",
         "Upgrade"
       ],
-      "risk": "MEDIUM"
+      "risk": "MEDIUM",
+      "suggested_retail": 630000
     },
     {
       "id": "OPS-INC-002",
@@ -347,7 +358,8 @@
         "장시간 복구작업",
         "벤더 유상지원"
       ],
-      "risk": "HIGH"
+      "risk": "HIGH",
+      "suggested_retail": 700000
     },
     {
       "id": "OPS-MONTH-001",
@@ -373,7 +385,51 @@
         "24x7 관제",
         "현장출동"
       ],
-      "risk": "LOW"
+      "risk": "LOW",
+      "suggested_retail": 630000
+    }
+  ],
+  "bundles": [
+    {
+      "id": "BUNDLE-ERP-START",
+      "name": "ERP 신규 구축 Starter",
+      "category": "Bundle",
+      "sku_ids": [
+        "ARC-FULL-001",
+        "INFRA-RHEL-001",
+        "PKG-ERP-001",
+        "DB-ORA-INSTALL"
+      ],
+      "bundle_price": 1980000,
+      "suggested_retail": 2900000,
+      "duration": "1~3 days",
+      "description": "설계부터 OS·DB·ERP 기본 설치까지 묶은 신규 구축 지원 패키지"
+    },
+    {
+      "id": "BUNDLE-K8S-READY",
+      "name": "K8s Go-Live Ready",
+      "category": "Bundle",
+      "sku_ids": [
+        "K8S-3N-001",
+        "INFRA-L7-001"
+      ],
+      "bundle_price": 2050000,
+      "suggested_retail": 2950000,
+      "duration": "1~2 days",
+      "description": "3Node K8s + L7/VIP 기본 구성을 포함한 Go-Live 준비 패키지"
+    },
+    {
+      "id": "BUNDLE-RECOVERY",
+      "name": "Recovery Assurance",
+      "category": "Bundle",
+      "sku_ids": [
+        "DB-RESTORE-001",
+        "OPS-MONTH-001"
+      ],
+      "bundle_price": 1100000,
+      "suggested_retail": 1600000,
+      "duration": "Initial + monthly",
+      "description": "Restore 검증과 첫 달 인프라 Health Check를 결합한 복구준비 패키지"
     }
   ]
 }
