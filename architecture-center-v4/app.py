@@ -165,7 +165,39 @@ def design(w:WizardIn):
         grade="CONDITIONAL";risk="MEDIUM";reasons.append("보안/가용성 조건 확인 필요")
     if "생산" in w.modules or "SCM" in w.modules: reasons.append("업무부하로 AP/DB 분리 우선")
     if w.users<=100 and not HEAVY.intersection(w.modules) and w.availability=="STANDARD": layout="AP/DB 통합 1대 가능"
-    sizing={"cpu":cpu,"memory":mem,"disk":disk,"layout":layout,"k8s_nodes":k8s_nodes,"storage":storage}
+    evidence_ids=[]
+    issue_ids=[]
+    if w.users<=100: evidence_ids.append("SIZE-001")
+    elif w.users<=500: evidence_ids.append("SIZE-002")
+    elif w.users<=1000: evidence_ids.append("SIZE-003")
+    elif w.users<=1500: evidence_ids.append("SIZE-004")
+    else: evidence_ids.append("SIZE-005")
+    evidence_ids.extend(["ERP-001","DR-001"])
+    if "UC" in w.modules:
+        evidence_ids.extend(["UC-003","NET-002"])
+        issue_ids.append("ISSUE-L7-PORT-001")
+        if w.users<=300: evidence_ids.append("UC-001")
+        elif 400<=w.users<=800: evidence_ids.append("UC-002")
+    if "ONEAI" in w.modules:
+        evidence_ids.append("ONEAI-001")
+        issue_ids.append("ISSUE-ONEAI-SSE-001")
+    if w.external_access:
+        evidence_ids.extend(["NET-001","NET-004"])
+        issue_ids.extend(["ISSUE-SPLIT-DNS-001","ISSUE-L7-PORT-001"])
+    if k8s_nodes>=2:
+        evidence_ids.append("NET-003")
+        issue_ids.append("ISSUE-SERVICE-IP-001")
+    if w.users>=1001:
+        evidence_ids.append("STO-001")
+        issue_ids.append("ISSUE-CEPH-2NODE-001")
+    if w.dr not in ("NONE","BACKUP"):
+        evidence_ids.append("DR-002")
+        issue_ids.append("ISSUE-BACKUP-RESTORE-001")
+    if "SCM" in w.modules or "생산" in w.modules:
+        issue_ids.append("ISSUE-NFS-IO-001")
+    evidence_ids=list(dict.fromkeys(evidence_ids))
+    issue_ids=list(dict.fromkeys(issue_ids))
+    sizing={"cpu":cpu,"memory":mem,"disk":disk,"layout":layout,"k8s_nodes":k8s_nodes,"storage":storage,"evidence_ids":evidence_ids,"known_issue_ids":issue_ids}
     network={"l7":needs_l7,"waf":needs_waf,"dmz":needs_dmz,"firewall":True}
     rec=f"{layout}; K8s {k8s_nodes} Node; {storage}"
     if reasons: rec += " / " + " · ".join(reasons)
@@ -181,6 +213,10 @@ def root(): return FileResponse(ROOT/"index.html")
 def manifest(): return FileResponse(ROOT/"manifest.webmanifest",media_type="application/manifest+json")
 @app.get("/sw.js")
 def sw(): return FileResponse(ROOT/"sw.js",media_type="application/javascript")
+@app.get("/knowledge-base.json")
+def knowledge_base(): return FileResponse(ROOT/"knowledge-base.json",media_type="application/json")
+@app.get("/known-issues.json")
+def known_issues(): return FileResponse(ROOT/"known-issues.json",media_type="application/json")
 @app.get("/api/health")
 def health(): return {"status":"ok","version":"4.0.0"}
 @app.get("/api/me")
