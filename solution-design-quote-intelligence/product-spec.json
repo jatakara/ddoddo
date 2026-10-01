@@ -1,0 +1,61 @@
+{
+  "version": "0.1",
+  "product_name": "Solution Design & Quote Intelligence Platform",
+  "north_star": "Qualified customer requirement to quote-ready design with evidence",
+  "personas": [
+    {
+      "id": "sales",
+      "goal": "고객에게 빠르게 답하고 견적을 만들고 싶다"
+    },
+    {
+      "id": "presales",
+      "goal": "반복 검토를 줄이고 예외 설계에 집중하고 싶다"
+    },
+    {
+      "id": "manager",
+      "goal": "견적 품질, 리드타임, 매출 리스크를 관리하고 싶다"
+    },
+    {
+      "id": "customer",
+      "goal": "왜 이 구성과 비용이 필요한지 이해하고 싶다"
+    }
+  ],
+  "core_entities": [
+    "Account",
+    "Opportunity",
+    "Requirement",
+    "SolutionDesign",
+    "BOM",
+    "QuoteReadiness",
+    "Risk",
+    "Evidence",
+    "Approval",
+    "Proposal"
+  ],
+  "quote_readiness": {
+    "PASS": "표준 및 필수정보 충족 — 견적 가능",
+    "REVIEW": "조건부 — 전문가 검토 후 견적",
+    "BLOCK": "필수정보/기술조건 미충족 — 견적 차단"
+  },
+  "ai_contract": {
+    "grounded": true,
+    "structured_output": true,
+    "evidence_required": true,
+    "human_approval_for": [
+      "price approval",
+      "exception approval",
+      "contract terms",
+      "standard changes"
+    ],
+    "eval_before_release": true
+  },
+  "kpis": [
+    "quote_lead_time",
+    "technical_review_hours",
+    "rework_rate",
+    "missing_component_rate",
+    "standard_automation_rate",
+    "sales_weekly_active",
+    "win_rate"
+  ]
+}
