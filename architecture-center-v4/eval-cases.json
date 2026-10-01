@@ -1,0 +1,214 @@
+{
+  "version": "2026-10-02-v1",
+  "pass_policy": "All critical cases must pass. No HIGH-severity case may lose its mandatory evidence or escalation flag.",
+  "cases": [
+    {
+      "id": "EVAL-001",
+      "name": "Small ERP integrated candidate",
+      "input": {
+        "users": 50,
+        "modules": [
+          "회계",
+          "인사"
+        ],
+        "external_access": false,
+        "availability": "STANDARD",
+        "dr": "BACKUP"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "SIZE-001",
+          "ERP-001",
+          "DR-001"
+        ],
+        "grade": [
+          "STANDARD",
+          "CONDITIONAL"
+        ],
+        "must_not_claim": [
+          "감사 때문에 DB 분리 필수"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-002",
+      "name": "ERP SCM separation",
+      "input": {
+        "users": 380,
+        "modules": [
+          "회계",
+          "인사",
+          "SCM"
+        ],
+        "external_access": false,
+        "availability": "STANDARD",
+        "dr": "BACKUP"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "SIZE-002",
+          "ERP-001"
+        ],
+        "must_recommend_contains": [
+          "AP/DB 분리"
+        ],
+        "must_include_issue": [
+          "ISSUE-NFS-IO-001"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-003",
+      "name": "UC external L7",
+      "input": {
+        "users": 600,
+        "modules": [
+          "UC"
+        ],
+        "external_access": true,
+        "availability": "HA",
+        "dr": "BACKUP"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "UC-002",
+          "UC-003",
+          "NET-001",
+          "NET-002"
+        ],
+        "must_include_issue": [
+          "ISSUE-L7-PORT-001",
+          "ISSUE-SPLIT-DNS-001"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-004",
+      "name": "ONEAI SSE",
+      "input": {
+        "users": 800,
+        "modules": [
+          "ONEAI"
+        ],
+        "external_access": true,
+        "availability": "STANDARD",
+        "dr": "BACKUP"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "ONEAI-001"
+        ],
+        "must_include_issue": [
+          "ISSUE-ONEAI-SSE-001"
+        ],
+        "must_not_claim": [
+          "HTTP/2만이 원인"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-005",
+      "name": "K8s 1200 users Ceph",
+      "input": {
+        "users": 1200,
+        "modules": [
+          "회계",
+          "인사",
+          "UC"
+        ],
+        "external_access": false,
+        "availability": "HA",
+        "dr": "BACKUP"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "SIZE-004",
+          "STO-001",
+          "NET-003"
+        ],
+        "must_include_issue": [
+          "ISSUE-CEPH-2NODE-001",
+          "ISSUE-SERVICE-IP-001"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-006",
+      "name": "DR restore evidence",
+      "input": {
+        "users": 500,
+        "modules": [
+          "회계",
+          "인사"
+        ],
+        "external_access": false,
+        "availability": "HA",
+        "dr": "WARM"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "DR-001",
+          "DR-002"
+        ],
+        "must_include_issue": [
+          "ISSUE-BACKUP-RESTORE-001"
+        ],
+        "must_recommend_contains": [
+          "Restore"
+        ]
+      },
+      "severity": "HIGH"
+    },
+    {
+      "id": "EVAL-007",
+      "name": "MetalLB ARP history",
+      "input": {
+        "users": 600,
+        "modules": [
+          "UC"
+        ],
+        "external_access": false,
+        "availability": "HA",
+        "dr": "BACKUP",
+        "network_note": "MetalLB L2, NAC MAC control"
+      },
+      "expected": {
+        "must_include_issue": [
+          "ISSUE-NET-VIP-ARP-001"
+        ],
+        "must_recommend_contains": [
+          "ARP",
+          "MAC",
+          "NAC"
+        ]
+      },
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "EVAL-008",
+      "name": "EFIS compatibility",
+      "input": {
+        "users": 80,
+        "modules": [
+          "EFIS10"
+        ],
+        "runtime": "Jakarta EE9"
+      },
+      "expected": {
+        "must_include_evidence": [
+          "PROD-003"
+        ],
+        "must_include_issue": [
+          "ISSUE-EFIS-JAKARTA-001"
+        ],
+        "escalation_required": true
+      },
+      "severity": "HIGH"
+    }
+  ]
+}
