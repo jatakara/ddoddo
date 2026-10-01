@@ -19,10 +19,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://archcenter:archcenter@db:5432/archcenter
-      JWT_SECRET: ${JWT_SECRET:-dev-only-change-this-secret-at-least-32-bytes}
-      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-480}
       BOOTSTRAP_ADMIN_USER: ${BOOTSTRAP_ADMIN_USER:-admin}
-      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-ChangeMeNow!}
     depends_on:
       db:
         condition: service_healthy
