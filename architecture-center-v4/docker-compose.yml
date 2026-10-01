@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: archcenter
+      POSTGRES_USER: archcenter
+      POSTGRES_PASSWORD: archcenter
+    volumes:
+      - archcenter_v4_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U archcenter -d archcenter"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://archcenter:archcenter@db:5432/archcenter
+      BOOTSTRAP_ADMIN_USER: ${BOOTSTRAP_ADMIN_USER:-admin}
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  archcenter_v4_pgdata:
