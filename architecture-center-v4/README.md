@@ -46,3 +46,29 @@ GitHub Pages에서는 `manifest.webmanifest` + `sw.js`로 설치형 웹앱으로
 ## Architecture ID
 
 `ARC-YYYYMMDD-NNNN` 형식으로 발급합니다. 견적 요청은 Architecture ID를 기준키로 연결하도록 설계했습니다.
+
+
+## v4.1 AI Best-Practice Layer
+
+- Deterministic Rule Engine remains the source of sizing/standard decisions.
+- AI reviews ambiguity, missing inputs, exception risk and customer explanation.
+- AI output uses a strict structured schema instead of free-form chat.
+- Every recommendation must return evidence IDs and known-issue IDs.
+- AI cannot submit quotes, approve exceptions, modify standards, or alter BOM automatically.
+- Historical incidents are maintained as regression eval cases.
+- AI runs are written to the audit log with model, prompt version and evidence IDs.
+- Routine reviews default to `gpt-6.1-sol`; the model can be changed by environment variable after eval comparison.
+- Without `OPENAI_API_KEY`, the endpoint uses a deterministic grounded fallback so the workflow remains usable.
+
+### AI review API
+
+`POST /api/ai/review`
+
+```json
+{
+  "architecture_id": "ARC-20261002-0001",
+  "question": "누락정보와 주요 리스크를 검토해줘."
+}
+```
+
+The response includes `confidence`, `missing_information`, `risks`, `recommendations`, `evidence_ids`, `known_issue_ids`, `escalation_required`, and `next_actions`.
