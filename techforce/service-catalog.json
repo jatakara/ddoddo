@@ -1,0 +1,379 @@
+{
+  "version": "0.2",
+  "currency": "KRW",
+  "pricing_note": "Demo pricing only. Actual commercial rates require partner policy, region, SLA and tax configuration.",
+  "sla_tiers": [
+    {
+      "id": "STANDARD",
+      "label": "Standard",
+      "response": "4 business hours",
+      "multiplier": 1
+    },
+    {
+      "id": "PRIORITY",
+      "label": "Priority",
+      "response": "1 business hour",
+      "multiplier": 1.25
+    },
+    {
+      "id": "EMERGENCY",
+      "label": "Emergency",
+      "response": "15 minutes",
+      "multiplier": 1.75
+    }
+  ],
+  "skus": [
+    {
+      "id": "ARC-ERP-001",
+      "role": "SA",
+      "name": "ERP Architecture Review",
+      "category": "Architecture",
+      "billing": "FIXED",
+      "base_price": 350000,
+      "duration": "2~4h",
+      "scope": [
+        "요구사항 검토",
+        "구성안 검토",
+        "Sizing 의견",
+        "HA/DR/Network 리스크",
+        "결과 요약"
+      ],
+      "requires": [
+        "사용자수",
+        "모듈",
+        "현재/목표 구성",
+        "HA/DR 요구"
+      ],
+      "excludes": [
+        "상세 설계서 작성",
+        "현장 작업"
+      ],
+      "risk": "LOW"
+    },
+    {
+      "id": "ARC-FULL-001",
+      "role": "SA",
+      "name": "신규 구축 Architecture 설계",
+      "category": "Architecture",
+      "billing": "FIXED",
+      "base_price": 700000,
+      "duration": "4~8h",
+      "scope": [
+        "요구사항 분석",
+        "표준 구성안",
+        "Sizing",
+        "Network/HA/DR",
+        "구축 전제조건",
+        "기술협의 1회"
+      ],
+      "requires": [
+        "고객 요구사항",
+        "제품/모듈",
+        "사용자/동접",
+        "외부연계",
+        "운영요건"
+      ],
+      "excludes": [
+        "상세 LLD",
+        "현장 구축"
+      ],
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "INFRA-RHEL-001",
+      "role": "INFRA",
+      "name": "RHEL 서버 구축",
+      "category": "Infrastructure",
+      "billing": "PER_SERVER",
+      "base_price": 280000,
+      "duration": "1~2h/Server",
+      "scope": [
+        "OS 기본설치",
+        "Hostname/Network",
+        "Time/DNS",
+        "Filesystem",
+        "기본 보안설정",
+        "체크리스트"
+      ],
+      "requires": [
+        "서버접근정보",
+        "IP/GW/DNS",
+        "스토리지 구성"
+      ],
+      "excludes": [
+        "Application 설치",
+        "보안솔루션"
+      ],
+      "risk": "LOW"
+    },
+    {
+      "id": "INFRA-L7-001",
+      "role": "INFRA",
+      "name": "L7 / VIP 구성 지원",
+      "category": "Infrastructure",
+      "billing": "FIXED",
+      "base_price": 650000,
+      "duration": "3~5h",
+      "scope": [
+        "VIP/Pool",
+        "Health Check",
+        "SSL Offload",
+        "XFF",
+        "Timeout",
+        "기본 검증"
+      ],
+      "requires": [
+        "L7 장비정보",
+        "VIP",
+        "Backend IP/Port",
+        "인증서"
+      ],
+      "excludes": [
+        "장비 라이선스",
+        "복잡한 WAF 정책"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "PKG-ERP-001",
+      "role": "PKG",
+      "name": "ERP 패키지 설치",
+      "category": "Package",
+      "billing": "FIXED",
+      "base_price": 550000,
+      "duration": "4~6h",
+      "scope": [
+        "사전점검",
+        "패키지 설치",
+        "기본 설정",
+        "기동/접속 확인",
+        "설치 결과서"
+      ],
+      "requires": [
+        "OS 준비",
+        "DB 준비",
+        "접속권한",
+        "설치파일"
+      ],
+      "excludes": [
+        "DB 구축",
+        "Network 변경"
+      ],
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "PKG-UC-001",
+      "role": "PKG",
+      "name": "UC 패키지 설치",
+      "category": "Package",
+      "billing": "FIXED",
+      "base_price": 700000,
+      "duration": "5~8h",
+      "scope": [
+        "사전점검",
+        "UC 설치",
+        "기본 서비스 확인",
+        "WebSocket/Jitsi 기본검증",
+        "결과서"
+      ],
+      "requires": [
+        "K8s/OS",
+        "DNS",
+        "L7/NodePort",
+        "인증서"
+      ],
+      "excludes": [
+        "L7 장비 설정",
+        "방화벽 변경"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "DB-ORA-INSTALL",
+      "role": "DBA",
+      "name": "Oracle 설치",
+      "category": "Database",
+      "billing": "FIXED",
+      "base_price": 650000,
+      "duration": "3~5h",
+      "scope": [
+        "Oracle 설치",
+        "Instance 생성",
+        "기본 파라미터",
+        "Listener",
+        "기동 확인"
+      ],
+      "requires": [
+        "OS/Filesystem",
+        "Oracle Media",
+        "계정/권한",
+        "DB 요구사항"
+      ],
+      "excludes": [
+        "RAC",
+        "Migration",
+        "튜닝"
+      ],
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "DB-MIG-001",
+      "role": "DBA",
+      "name": "DB Migration",
+      "category": "Database",
+      "billing": "FIXED",
+      "base_price": 1200000,
+      "duration": "6~10h",
+      "scope": [
+        "사전진단",
+        "Export/Import 계획",
+        "Migration",
+        "Object/Row 검증",
+        "결과서"
+      ],
+      "requires": [
+        "Source/Target 정보",
+        "DB Size",
+        "Downtime Window",
+        "Backup"
+      ],
+      "excludes": [
+        "Application 데이터 정합성 검증"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "DB-RESTORE-001",
+      "role": "DBA",
+      "name": "Backup / Restore 검증",
+      "category": "Database",
+      "billing": "FIXED",
+      "base_price": 800000,
+      "duration": "4~8h",
+      "scope": [
+        "Backup 확인",
+        "Restore Test",
+        "기동검증",
+        "RPO/RTO 관찰",
+        "증적"
+      ],
+      "requires": [
+        "Backup 파일",
+        "검증서버",
+        "DB 계정"
+      ],
+      "excludes": [
+        "DR Site 구축"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "K8S-3N-001",
+      "role": "K8S",
+      "name": "Kubernetes 3Node 구축",
+      "category": "Kubernetes",
+      "billing": "FIXED",
+      "base_price": 1600000,
+      "duration": "1~2 days",
+      "scope": [
+        "3Node Cluster",
+        "CNI",
+        "Ingress",
+        "Storage 연동",
+        "기본 RBAC",
+        "Health Check",
+        "결과서"
+      ],
+      "requires": [
+        "RHEL 서버 3대",
+        "Network",
+        "DNS/NTP",
+        "Storage",
+        "접속권한"
+      ],
+      "excludes": [
+        "Application 배포",
+        "L7/FW 장비 변경"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "K8S-DIAG-001",
+      "role": "K8S",
+      "name": "K8s 장애 분석 2시간",
+      "category": "Kubernetes",
+      "billing": "FIXED",
+      "base_price": 450000,
+      "duration": "2h",
+      "scope": [
+        "증상확인",
+        "Cluster 점검",
+        "로그 분석",
+        "원인후보",
+        "조치안"
+      ],
+      "requires": [
+        "kubeconfig/접속권한",
+        "장애시간/증상",
+        "관련 로그"
+      ],
+      "excludes": [
+        "Major Change",
+        "Upgrade"
+      ],
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "OPS-INC-002",
+      "role": "OPS",
+      "name": "긴급 장애지원 2시간",
+      "category": "Operations",
+      "billing": "FIXED",
+      "base_price": 500000,
+      "duration": "2h",
+      "scope": [
+        "초동분석",
+        "영향범위",
+        "로그/상태확인",
+        "우회안",
+        "상황보고"
+      ],
+      "requires": [
+        "접속권한",
+        "장애증상",
+        "변경이력"
+      ],
+      "excludes": [
+        "장시간 복구작업",
+        "벤더 유상지원"
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "OPS-MONTH-001",
+      "role": "OPS",
+      "name": "월간 Infrastructure Health Check",
+      "category": "Managed Service",
+      "billing": "MONTHLY",
+      "base_price": 450000,
+      "duration": "Monthly",
+      "scope": [
+        "월 1회 점검",
+        "CPU/MEM/Disk",
+        "DB/K8s 기본상태",
+        "Backup 확인",
+        "Risk Summary",
+        "월간보고"
+      ],
+      "requires": [
+        "Monitoring/접속정보",
+        "대상 시스템 목록"
+      ],
+      "excludes": [
+        "24x7 관제",
+        "현장출동"
+      ],
+      "risk": "LOW"
+    }
+  ]
+}
