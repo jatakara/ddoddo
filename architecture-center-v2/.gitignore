@@ -1,0 +1,6 @@
+architecture_center.db
+*.db
+__pycache__/
+*.py[cod]
+.venv/
+.env
