@@ -1,5 +1,5 @@
 {
-  "version": "2026.10-v1",
+  "version": "2026.10-v2-evidence",
   "title": "Architecture Center Standard Knowledge",
   "principles": [
     "사용자 수만으로 확정하지 않고 동접, 모듈, 배치/인터페이스, DB I/O, 저장량, 성장률, HA/DR을 함께 검토한다.",
@@ -15,7 +15,16 @@
       "summary": "회계·인사 중심, 낮은 동접, 복잡한 연계/HA 요구가 없으면 AP/DB 통합 1대 구성이 표준 후보가 될 수 있다.",
       "sales": "사용자 수뿐 아니라 모듈·동접·연계·HA/DR을 같이 확인한다.",
       "rule": "users<=100 && no heavy module && standard availability",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-SMALL-ERP-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "소규모 ERP AP/DB 통합 표준화 검토",
+          "basis": "사용자 수 단독이 아니라 모듈·동접·연계·HA/DR 조건을 함께 평가한 Architecture Center 결정"
+        }
+      ]
     },
     {
       "id": "SIZE-002",
@@ -24,7 +33,16 @@
       "summary": "ERP는 AP/DB 분리를 우선 권장한다. 실제 CPU/MEM/Disk는 동접·Batch·DB I/O·성장률로 보정한다.",
       "sales": "일반적인 견적 기본값은 AP/DB 분리로 시작한다.",
       "rule": "101<=users<=500",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-SIZING-002",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "사용자 구간별 ERP 구성 기준",
+          "basis": "101~500 User 구간에서 AP/DB 역할분리를 기본값으로 두고 부하조건으로 보정"
+        }
+      ]
     },
     {
       "id": "SIZE-003",
@@ -33,7 +51,16 @@
       "summary": "2Node 또는 역할 분리 구성을 검토한다. 가용성·서비스 특성에 따라 Web/WAS/DB 분리 수준을 결정한다.",
       "sales": "단일 서버보다는 장애영역 분리와 확장성을 우선 설명한다.",
       "rule": "501<=users<=1000",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-SIZING-003",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "사용자 구간별 ERP 구성 기준",
+          "basis": "501~1000 User는 장애영역·확장성 기준으로 2Node 또는 역할분리 검토"
+        }
+      ]
     },
     {
       "id": "SIZE-004",
@@ -42,7 +69,16 @@
       "summary": "3Node 동일 역할 K8s Cluster를 기준으로 검토하며 Storage는 Rook-Ceph 또는 NAS를 적용한다.",
       "sales": "3Node를 AP/DB 역할분리 서버로 보지 않고 K8s Cluster로 설명한다.",
       "rule": "1001<=users<=1500",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-SIZING-004",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "1001~1500 User 3Node 기준",
+          "basis": "3Node를 AP/DB 역할분리 서버가 아닌 동일역할 K8s Cluster로 정의하고 Rook-Ceph 또는 NAS를 적용"
+        }
+      ]
     },
     {
       "id": "SIZE-005",
@@ -51,7 +87,16 @@
       "summary": "대규모/고부하 전용 Architecture Review 대상으로 전환한다.",
       "sales": "표준 사양 자동견적보다 성능·HA·DR·네트워크 전용검토가 우선이다.",
       "rule": "users>1500",
-      "status": "REVIEW"
+      "status": "REVIEW",
+      "evidence": [
+        {
+          "id": "DEC-SIZING-005",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "대규모 전용검토 기준",
+          "basis": "1500 User 초과는 표준 자동견적보다 성능·HA·DR·네트워크 전용검토 우선"
+        }
+      ]
     },
     {
       "id": "UC-001",
@@ -60,7 +105,16 @@
       "summary": "소규모 UC는 1Node 24Core/128GB 기준을 후보로 검토할 수 있다.",
       "sales": "외부접속·Realtime·HA 요구가 있으면 1Node를 자동 적용하지 않는다.",
       "rule": "UC && users<=300",
-      "status": "CONDITIONAL"
+      "status": "CONDITIONAL",
+      "evidence": [
+        {
+          "id": "SPEC-UC-300",
+          "type": "SPEC_GUIDE",
+          "level": "B",
+          "title": "UC 소규모 권고사양",
+          "basis": "300 User 이하 1Node 24Core/128GB 후보 기준"
+        }
+      ]
     },
     {
       "id": "UC-002",
@@ -69,7 +123,16 @@
       "summary": "3Node 24Core/256GB x3 구성을 기준안으로 검토한다.",
       "sales": "WebSocket/UDP·Pod 재배치·PV/File 증가율을 함께 확인한다.",
       "rule": "UC around 600",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "SPEC-UC-600",
+          "type": "SPEC_GUIDE",
+          "level": "B",
+          "title": "UC 600 User 권고사양",
+          "basis": "약 600 User 3Node 24Core/256GB x3 기준"
+        }
+      ]
     },
     {
       "id": "ERP-001",
@@ -78,7 +141,16 @@
       "summary": "Client → Web(WebtoB/Nginx) → WAS/AP(JEUS/Tomcat) → DB(Oracle/MariaDB) 구조를 기본으로 한다.",
       "sales": "ERP는 트랜잭션 정합성·DB I/O·백업/복구가 핵심이다.",
       "rule": "ERP baseline",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-004",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol ERP 단독 Architecture v1.0",
+          "basis": "ERP Web/WAS/AP/DB/Storage/Monitoring 계층과 Web→WAS/AP→DB 접근 원칙"
+        }
+      ]
     },
     {
       "id": "ERP-002",
@@ -87,7 +159,16 @@
       "summary": "Web 2+ 권고, WAS/AP 다중 Node/N+1 검토, DB Active-Standby 또는 복구 가능한 Backup 체계를 기준으로 한다.",
       "sales": "DB 보호와 Recovery 검증을 AP 확장보다 우선한다.",
       "rule": "ERP HA baseline",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-004",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol ERP 단독 Architecture v1.0",
+          "basis": "Web 2+ 또는 HA, WAS/AP 다중 Pool/N+1, DB HA·Backup·Recovery 검증 원칙"
+        }
+      ]
     },
     {
       "id": "ERP-003",
@@ -96,7 +177,16 @@
       "summary": "DB 분리 자체가 일반적인 감사 필수요건은 아니다. 부하·장애영향·보안구역·운영 요구를 기준으로 판단한다.",
       "sales": "감사 때문이라고 단정하지 말고 실제 고객 요구와 Risk로 설명한다.",
       "rule": "DB separation decision",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "DEC-DB-SEPARATION-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "DB 분리 판단 기준",
+          "basis": "감사 자체보다 부하·장애영향·보안구역·운영 요구를 기준으로 분리 여부 판단"
+        }
+      ]
     },
     {
       "id": "PROD-001",
@@ -105,7 +195,16 @@
       "summary": "ICS10·EFIS10은 통합형/분리형이 아니라 단독형으로 관리하고 개발서버 포함 여부를 구분한다.",
       "sales": "ERP/UC 통합·분리 선택 항목과 섞지 않는다.",
       "rule": "product in ICS10,EFIS10",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-PRODUCT-TYPE-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "ICS10/EFIS10 단독형 분류",
+          "basis": "통합형/분리형과 분리하여 단독형 제품군으로 관리"
+        }
+      ]
     },
     {
       "id": "PROD-002",
@@ -114,7 +213,16 @@
       "summary": "WebtoB SE는 Reverse Proxy Group 구성이 제한되므로 해당 기능 요구 시 EE 검토가 필요하다.",
       "sales": "요구기능을 먼저 확인한 뒤 Edition을 선택한다.",
       "rule": "reverse proxy group required",
-      "status": "CHECK"
+      "status": "CHECK",
+      "evidence": [
+        {
+          "id": "COMP-WEBTOB-SE-001",
+          "type": "COMPATIBILITY",
+          "level": "B",
+          "title": "WebtoB SE Reverse Proxy 제약",
+          "basis": "Reverse Proxy Group 요구 시 SE 제약으로 EE 검토 필요"
+        }
+      ]
     },
     {
       "id": "PROD-003",
@@ -123,7 +231,16 @@
       "summary": "EFIS10은 Jakarta EE9 미지원 제약을 Compatibility Check에 포함한다.",
       "sales": "JDK/Middleware 버전 확정 전에 호환성 확인이 필요하다.",
       "rule": "EFIS10 compatibility",
-      "status": "CHECK"
+      "status": "CHECK",
+      "evidence": [
+        {
+          "id": "COMP-EFIS10-JAKARTA-001",
+          "type": "COMPATIBILITY",
+          "level": "B",
+          "title": "EFIS10 Jakarta EE9 호환성",
+          "basis": "EFIS10의 Jakarta EE9 미지원 사항을 사전 Compatibility Gate에 반영"
+        }
+      ]
     },
     {
       "id": "NET-001",
@@ -132,7 +249,16 @@
       "summary": "외부 공개 시 DMZ Web/Proxy 또는 WAF/L7 경유를 기본으로 하고 DB는 외부 공개하지 않는다.",
       "sales": "외부 → VIP 443 → Web → WAS/AP → DB 순방향 접근으로 설명한다.",
       "rule": "external_access",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-004",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol ERP 단독 Architecture v1.0",
+          "basis": "외부 공개 시 DMZ/WAF/L7 경유, DB 외부 공개 금지, Client→VIP→Web→WAS/AP→DB 순방향 접근"
+        }
+      ]
     },
     {
       "id": "NET-002",
@@ -141,7 +267,23 @@
       "summary": "VIP, Health Check, TLS, Pool 분산을 담당하며 단순 Port Open보다 서비스 URL Health Check를 권장한다.",
       "sales": "SSL/인증서/DNS/Health Check를 세트로 확인한다.",
       "rule": "L7 required",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-004",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol ERP 단독 Architecture v1.0",
+          "basis": "VIP·TLS·Pool·Health Check 원칙과 서비스 URL 기반 Health Check 권고"
+        },
+        {
+          "id": "SPEC-L7-V1.3",
+          "type": "SPEC_GUIDE",
+          "level": "A",
+          "title": "OmniEsol 필수 스펙 가이드 v1.3",
+          "basis": "SSL Offload, RoundRobin+Sticky, SNAT, X-Forwarded-For, 장시간 연결 Timeout 정책"
+        }
+      ]
     },
     {
       "id": "NET-003",
@@ -150,7 +292,16 @@
       "summary": "K8s에서 서버 IP를 서비스 IP로 직접 사용할 수 있으나 교체·확장·복구 시 재작업 위험 때문에 별도 Floating/Service IP를 권장한다.",
       "sales": "공인IP 필수 여부가 아니라 서버IP와 서비스IP 분리가 핵심이다.",
       "rule": "K8s service IP",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "DEC-K8S-SERVICE-IP-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "K8s 서비스 IP 분리 결정",
+          "basis": "서버 교체·확장 시 접속정보 종속과 재작업을 줄이기 위해 Floating/Service IP 분리 권고"
+        }
+      ]
     },
     {
       "id": "NET-004",
@@ -159,7 +310,16 @@
       "summary": "외부 DNS는 공인 VIP, 서버는 사설 IP를 사용하고 DNAT·SSL·WAF·HA 정책을 명확히 하는 구성을 우선한다.",
       "sales": "내부/외부 사용자를 DNS와 VIP 정책으로 분리할 수 있다.",
       "rule": "external/internal access",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "DEC-SPLIT-DNS-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "내부/외부 DNS 분리 설계",
+          "basis": "외부 DNS 공인 VIP, 서버 사설 IP, DNAT·SSL·WAF·HA 정책 분리"
+        }
+      ]
     },
     {
       "id": "STO-001",
@@ -168,7 +328,16 @@
       "summary": "Ceph는 OS RAID1, OSD 전용 Disk, Replica 3, Host Failure Domain, 10G 이중화를 기준으로 검토한다.",
       "sales": "3Node 이상 Cluster에서 장애영역과 네트워크를 함께 본다.",
       "rule": "Rook-Ceph",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "DEC-CEPH-001",
+          "type": "ARCH_DECISION",
+          "level": "B",
+          "title": "Rook-Ceph PoC 기준",
+          "basis": "OS RAID1, OSD 전용, Replica 3, Host Failure Domain, 10G 이중화"
+        }
+      ]
     },
     {
       "id": "DR-001",
@@ -177,7 +346,16 @@
       "summary": "정기 Backup만으로 충분하지 않으며 Restore Test 증적과 고객 기준 RPO/RTO를 확정해야 한다.",
       "sales": "백업 성공과 복구 가능은 다르다고 안내한다.",
       "rule": "all production",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-004",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol ERP 단독 Architecture v1.0",
+          "basis": "Backup Schedule/Retention뿐 아니라 Restore Test 증적과 고객 RPO/RTO 확정 필요"
+        }
+      ]
     },
     {
       "id": "DR-002",
@@ -186,7 +364,16 @@
       "summary": "운영 AP/DB Backup → 개발/검증환경 Restore → DB Import → AP/DB 기동 → 정상성 검증 순으로 복구 시나리오를 검증한다.",
       "sales": "DR/백업 요구가 있으면 복구 절차와 검증 책임을 함께 확인한다.",
       "rule": "restore validation",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "RUNBOOK-RESTORE-001",
+          "type": "RUNBOOK",
+          "level": "B",
+          "title": "개발서버 복구 검증 시나리오",
+          "basis": "운영 AP/DB Backup→검증환경 Restore→DB Import→AP/DB 기동→정상성 확인"
+        }
+      ]
     },
     {
       "id": "UC-003",
@@ -195,7 +382,16 @@
       "summary": "UC는 WebSocket/MQTT/Jitsi UDP 등 ERP와 다른 트래픽 특성을 별도 설계하고 APNS/FCM/OAuth2/License/Registry Outbound를 확인한다.",
       "sales": "단순 HTTPS 서비스로만 보면 안 된다.",
       "rule": "UC realtime",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "OMNI-INF-ARCH-STD-003",
+          "type": "STANDARD_DOC",
+          "level": "A",
+          "title": "OmniEsol 분리형 Architecture v1.0",
+          "basis": "WebSocket/MQTT/Jitsi UDP 등 UC Realtime 경로와 APNS/FCM/OAuth/Registry Outbound 별도 설계"
+        }
+      ]
     },
     {
       "id": "ONEAI-001",
@@ -204,7 +400,16 @@
       "summary": "SSE는 HTTP/1.1과 HTTP/2 모두에서 동작하므로 HTTP/2만 원인으로 단정하지 않는다. WAF SSE 예외, L7 Buffering/Timeout을 우선 점검한다.",
       "sales": "원인이 불명확한 L7 변경보다 WAF/Timeout 점검을 먼저 요청한다.",
       "rule": "ONEAI SSE",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "ISSUE-ONEAI-SSE-001",
+          "type": "FIELD_ISSUE",
+          "level": "B",
+          "title": "ONEAI SSE 버퍼링 이슈",
+          "basis": "SSE 응답 경로의 WAF/Proxy/LB 버퍼링과 예외정책·Timeout 점검 사례"
+        }
+      ]
     },
     {
       "id": "GOV-001",
@@ -213,7 +418,16 @@
       "summary": "Critical FAIL은 구축 진행을 중지하고 보완 후 재검증한다. 비표준은 사전 Architecture Review 및 승인 후 견적/구축한다.",
       "sales": "표준건은 빠르게, 예외건만 전문가 검토로 보낸다.",
       "rule": "critical fail/exception",
-      "status": "STANDARD"
+      "status": "STANDARD",
+      "evidence": [
+        {
+          "id": "AC-GOV-001",
+          "type": "GOVERNANCE",
+          "level": "A",
+          "title": "Architecture Center Readiness Gate",
+          "basis": "Critical FAIL은 구축 진행 중지, 비표준은 Architecture Review/승인 후 진행"
+        }
+      ]
     },
     {
       "id": "GOV-002",
@@ -222,7 +436,22 @@
       "summary": "사용자 수 외 Peak 동접, TPS/P95, JVM, DB Session/Wait, IOPS, Batch 시간, 저장량 증가율을 수집해 표준을 지속 보정한다.",
       "sales": "불명확한 입력은 임의 보정하지 않고 추가 확인 대상으로 표시한다.",
       "rule": "validation data",
-      "status": "GUIDE"
+      "status": "GUIDE",
+      "evidence": [
+        {
+          "id": "AC-SIZING-EVIDENCE-001",
+          "type": "GOVERNANCE",
+          "level": "A",
+          "title": "Sizing Evidence Set",
+          "basis": "Peak 동접·TPS/P95·JVM·DB Session/Wait·IOPS·Batch·증가율 기반 보정"
+        }
+      ]
     }
-  ]
+  ],
+  "evidence_policy": {
+    "A": "승인된 표준/스펙/거버넌스 문서",
+    "B": "Architecture 결정 또는 실제 현장 이슈에서 검증된 기준",
+    "C": "운영 가이드/가설로 추가 검증이 필요한 기준",
+    "rule": "자동판정 결과는 최소 1개 이상의 근거 ID를 노출하며 C 등급만 존재할 경우 자동승인하지 않는다."
+  }
 }
