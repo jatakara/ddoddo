@@ -1,0 +1,92 @@
+{
+  "version": "0.1",
+  "product_name": "TechForce",
+  "tagline": "On-demand Technical Workforce",
+  "north_star": "Paid technical request to accepted delivery with minimum expert touch time",
+  "personas": [
+    {
+      "id": "sales",
+      "goal": "고객 프로젝트에 필요한 기술전문가를 즉시 요청하고 가격/일정을 확인"
+    },
+    {
+      "id": "partner_admin",
+      "goal": "비용·승인·SLA·프로젝트 품질 관리"
+    },
+    {
+      "id": "expert",
+      "goal": "명확한 Scope/Runbook/증적 기준으로 작업 수행"
+    },
+    {
+      "id": "ops",
+      "goal": "AI triage, 매칭, 품질관리, escalation"
+    },
+    {
+      "id": "customer",
+      "goal": "진행상태와 결과 증적 확인"
+    }
+  ],
+  "service_roles": [
+    "Solution Architect",
+    "Infrastructure Engineer",
+    "Package Engineer",
+    "DBA",
+    "Kubernetes Engineer",
+    "Operations Engineer"
+  ],
+  "request_states": [
+    "DRAFT",
+    "QUOTED",
+    "APPROVAL_REQUIRED",
+    "PAID",
+    "TRIAGED",
+    "MATCHED",
+    "IN_PROGRESS",
+    "QA",
+    "ACCEPTANCE",
+    "COMPLETED",
+    "CANCELLED"
+  ],
+  "pricing_models": [
+    "FIXED",
+    "HOURLY",
+    "DAILY",
+    "MONTHLY"
+  ],
+  "priority": [
+    "STANDARD",
+    "PRIORITY",
+    "EMERGENCY"
+  ],
+  "ai_responsibilities": [
+    "요구사항 구조화",
+    "누락정보 질문 생성",
+    "Scope 분해",
+    "난이도 분류",
+    "예상시간 산정",
+    "Runbook 추천",
+    "전문가 후보 추천",
+    "작업 전 Preflight",
+    "작업 중 Copilot",
+    "결과 검증",
+    "보고서/증적 정리"
+  ],
+  "human_required": [
+    "고위험 변경 승인",
+    "DB Failover/DR 전환",
+    "Firewall/L7/K8s major change",
+    "고객 책임/비용 분쟁",
+    "예외 Architecture 승인"
+  ],
+  "kpis": [
+    "paid_requests",
+    "request_to_match_time",
+    "expert_utilization",
+    "ai_assist_rate",
+    "first_time_right_rate",
+    "rework_rate",
+    "acceptance_cycle_time",
+    "gross_margin",
+    "sla_breach_rate",
+    "repeat_purchase_rate"
+  ]
+}
