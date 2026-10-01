@@ -1,0 +1,228 @@
+{
+  "version": "2026.10-v1",
+  "title": "Architecture Center Standard Knowledge",
+  "principles": [
+    "사용자 수만으로 확정하지 않고 동접, 모듈, 배치/인터페이스, DB I/O, 저장량, 성장률, HA/DR을 함께 검토한다.",
+    "표준 구성은 자동 통과시키고 조건부/비표준/예외 구성은 Architecture Review 대상으로 전환한다.",
+    "표준 → Template → Customer As-Built 구조로 관리하고 버전·Owner·변경이력을 남긴다.",
+    "Compact/통합 구성에서도 Backup·Monitoring은 생략하지 않으며 SPOF를 명시한다."
+  ],
+  "items": [
+    {
+      "id": "SIZE-001",
+      "category": "Sizing",
+      "title": "1~100 User 소규모 ERP",
+      "summary": "회계·인사 중심, 낮은 동접, 복잡한 연계/HA 요구가 없으면 AP/DB 통합 1대 구성이 표준 후보가 될 수 있다.",
+      "sales": "사용자 수뿐 아니라 모듈·동접·연계·HA/DR을 같이 확인한다.",
+      "rule": "users<=100 && no heavy module && standard availability",
+      "status": "STANDARD"
+    },
+    {
+      "id": "SIZE-002",
+      "category": "Sizing",
+      "title": "101~500 User",
+      "summary": "ERP는 AP/DB 분리를 우선 권장한다. 실제 CPU/MEM/Disk는 동접·Batch·DB I/O·성장률로 보정한다.",
+      "sales": "일반적인 견적 기본값은 AP/DB 분리로 시작한다.",
+      "rule": "101<=users<=500",
+      "status": "STANDARD"
+    },
+    {
+      "id": "SIZE-003",
+      "category": "Sizing",
+      "title": "501~1000 User",
+      "summary": "2Node 또는 역할 분리 구성을 검토한다. 가용성·서비스 특성에 따라 Web/WAS/DB 분리 수준을 결정한다.",
+      "sales": "단일 서버보다는 장애영역 분리와 확장성을 우선 설명한다.",
+      "rule": "501<=users<=1000",
+      "status": "STANDARD"
+    },
+    {
+      "id": "SIZE-004",
+      "category": "Sizing",
+      "title": "1001~1500 User",
+      "summary": "3Node 동일 역할 K8s Cluster를 기준으로 검토하며 Storage는 Rook-Ceph 또는 NAS를 적용한다.",
+      "sales": "3Node를 AP/DB 역할분리 서버로 보지 않고 K8s Cluster로 설명한다.",
+      "rule": "1001<=users<=1500",
+      "status": "STANDARD"
+    },
+    {
+      "id": "SIZE-005",
+      "category": "Sizing",
+      "title": "1500 User 초과",
+      "summary": "대규모/고부하 전용 Architecture Review 대상으로 전환한다.",
+      "sales": "표준 사양 자동견적보다 성능·HA·DR·네트워크 전용검토가 우선이다.",
+      "rule": "users>1500",
+      "status": "REVIEW"
+    },
+    {
+      "id": "UC-001",
+      "category": "UC",
+      "title": "UC 300 User 이하",
+      "summary": "소규모 UC는 1Node 24Core/128GB 기준을 후보로 검토할 수 있다.",
+      "sales": "외부접속·Realtime·HA 요구가 있으면 1Node를 자동 적용하지 않는다.",
+      "rule": "UC && users<=300",
+      "status": "CONDITIONAL"
+    },
+    {
+      "id": "UC-002",
+      "category": "UC",
+      "title": "UC 약 600 User",
+      "summary": "3Node 24Core/256GB x3 구성을 기준안으로 검토한다.",
+      "sales": "WebSocket/UDP·Pod 재배치·PV/File 증가율을 함께 확인한다.",
+      "rule": "UC around 600",
+      "status": "STANDARD"
+    },
+    {
+      "id": "ERP-001",
+      "category": "ERP",
+      "title": "ERP 표준 계층",
+      "summary": "Client → Web(WebtoB/Nginx) → WAS/AP(JEUS/Tomcat) → DB(Oracle/MariaDB) 구조를 기본으로 한다.",
+      "sales": "ERP는 트랜잭션 정합성·DB I/O·백업/복구가 핵심이다.",
+      "rule": "ERP baseline",
+      "status": "STANDARD"
+    },
+    {
+      "id": "ERP-002",
+      "category": "ERP",
+      "title": "ERP HA",
+      "summary": "Web 2+ 권고, WAS/AP 다중 Node/N+1 검토, DB Active-Standby 또는 복구 가능한 Backup 체계를 기준으로 한다.",
+      "sales": "DB 보호와 Recovery 검증을 AP 확장보다 우선한다.",
+      "rule": "ERP HA baseline",
+      "status": "STANDARD"
+    },
+    {
+      "id": "ERP-003",
+      "category": "ERP",
+      "title": "DB 분리와 감사",
+      "summary": "DB 분리 자체가 일반적인 감사 필수요건은 아니다. 부하·장애영향·보안구역·운영 요구를 기준으로 판단한다.",
+      "sales": "감사 때문이라고 단정하지 말고 실제 고객 요구와 Risk로 설명한다.",
+      "rule": "DB separation decision",
+      "status": "GUIDE"
+    },
+    {
+      "id": "PROD-001",
+      "category": "Product",
+      "title": "ICS10 / EFIS10",
+      "summary": "ICS10·EFIS10은 통합형/분리형이 아니라 단독형으로 관리하고 개발서버 포함 여부를 구분한다.",
+      "sales": "ERP/UC 통합·분리 선택 항목과 섞지 않는다.",
+      "rule": "product in ICS10,EFIS10",
+      "status": "STANDARD"
+    },
+    {
+      "id": "PROD-002",
+      "category": "Compatibility",
+      "title": "WebtoB SE Reverse Proxy",
+      "summary": "WebtoB SE는 Reverse Proxy Group 구성이 제한되므로 해당 기능 요구 시 EE 검토가 필요하다.",
+      "sales": "요구기능을 먼저 확인한 뒤 Edition을 선택한다.",
+      "rule": "reverse proxy group required",
+      "status": "CHECK"
+    },
+    {
+      "id": "PROD-003",
+      "category": "Compatibility",
+      "title": "EFIS10 Jakarta EE9",
+      "summary": "EFIS10은 Jakarta EE9 미지원 제약을 Compatibility Check에 포함한다.",
+      "sales": "JDK/Middleware 버전 확정 전에 호환성 확인이 필요하다.",
+      "rule": "EFIS10 compatibility",
+      "status": "CHECK"
+    },
+    {
+      "id": "NET-001",
+      "category": "Network",
+      "title": "ERP 외부 공개",
+      "summary": "외부 공개 시 DMZ Web/Proxy 또는 WAF/L7 경유를 기본으로 하고 DB는 외부 공개하지 않는다.",
+      "sales": "외부 → VIP 443 → Web → WAS/AP → DB 순방향 접근으로 설명한다.",
+      "rule": "external_access",
+      "status": "STANDARD"
+    },
+    {
+      "id": "NET-002",
+      "category": "Network",
+      "title": "L4/L7 표준",
+      "summary": "VIP, Health Check, TLS, Pool 분산을 담당하며 단순 Port Open보다 서비스 URL Health Check를 권장한다.",
+      "sales": "SSL/인증서/DNS/Health Check를 세트로 확인한다.",
+      "rule": "L7 required",
+      "status": "STANDARD"
+    },
+    {
+      "id": "NET-003",
+      "category": "Network",
+      "title": "서비스 IP 분리",
+      "summary": "K8s에서 서버 IP를 서비스 IP로 직접 사용할 수 있으나 교체·확장·복구 시 재작업 위험 때문에 별도 Floating/Service IP를 권장한다.",
+      "sales": "공인IP 필수 여부가 아니라 서버IP와 서비스IP 분리가 핵심이다.",
+      "rule": "K8s service IP",
+      "status": "GUIDE"
+    },
+    {
+      "id": "NET-004",
+      "category": "Network",
+      "title": "외부/내부 DNS 분리",
+      "summary": "외부 DNS는 공인 VIP, 서버는 사설 IP를 사용하고 DNAT·SSL·WAF·HA 정책을 명확히 하는 구성을 우선한다.",
+      "sales": "내부/외부 사용자를 DNS와 VIP 정책으로 분리할 수 있다.",
+      "rule": "external/internal access",
+      "status": "GUIDE"
+    },
+    {
+      "id": "STO-001",
+      "category": "Storage",
+      "title": "Rook-Ceph 기준",
+      "summary": "Ceph는 OS RAID1, OSD 전용 Disk, Replica 3, Host Failure Domain, 10G 이중화를 기준으로 검토한다.",
+      "sales": "3Node 이상 Cluster에서 장애영역과 네트워크를 함께 본다.",
+      "rule": "Rook-Ceph",
+      "status": "STANDARD"
+    },
+    {
+      "id": "DR-001",
+      "category": "DR/Backup",
+      "title": "Backup과 Recovery",
+      "summary": "정기 Backup만으로 충분하지 않으며 Restore Test 증적과 고객 기준 RPO/RTO를 확정해야 한다.",
+      "sales": "백업 성공과 복구 가능은 다르다고 안내한다.",
+      "rule": "all production",
+      "status": "STANDARD"
+    },
+    {
+      "id": "DR-002",
+      "category": "DR/Backup",
+      "title": "복구 검증 흐름",
+      "summary": "운영 AP/DB Backup → 개발/검증환경 Restore → DB Import → AP/DB 기동 → 정상성 검증 순으로 복구 시나리오를 검증한다.",
+      "sales": "DR/백업 요구가 있으면 복구 절차와 검증 책임을 함께 확인한다.",
+      "rule": "restore validation",
+      "status": "GUIDE"
+    },
+    {
+      "id": "UC-003",
+      "category": "UC",
+      "title": "UC 실시간 트래픽",
+      "summary": "UC는 WebSocket/MQTT/Jitsi UDP 등 ERP와 다른 트래픽 특성을 별도 설계하고 APNS/FCM/OAuth2/License/Registry Outbound를 확인한다.",
+      "sales": "단순 HTTPS 서비스로만 보면 안 된다.",
+      "rule": "UC realtime",
+      "status": "STANDARD"
+    },
+    {
+      "id": "ONEAI-001",
+      "category": "AI/Streaming",
+      "title": "ONEAI SSE",
+      "summary": "SSE는 HTTP/1.1과 HTTP/2 모두에서 동작하므로 HTTP/2만 원인으로 단정하지 않는다. WAF SSE 예외, L7 Buffering/Timeout을 우선 점검한다.",
+      "sales": "원인이 불명확한 L7 변경보다 WAF/Timeout 점검을 먼저 요청한다.",
+      "rule": "ONEAI SSE",
+      "status": "GUIDE"
+    },
+    {
+      "id": "GOV-001",
+      "category": "Governance",
+      "title": "Readiness Gate",
+      "summary": "Critical FAIL은 구축 진행을 중지하고 보완 후 재검증한다. 비표준은 사전 Architecture Review 및 승인 후 견적/구축한다.",
+      "sales": "표준건은 빠르게, 예외건만 전문가 검토로 보낸다.",
+      "rule": "critical fail/exception",
+      "status": "STANDARD"
+    },
+    {
+      "id": "GOV-002",
+      "category": "Governance",
+      "title": "Sizing 검증 데이터",
+      "summary": "사용자 수 외 Peak 동접, TPS/P95, JVM, DB Session/Wait, IOPS, Batch 시간, 저장량 증가율을 수집해 표준을 지속 보정한다.",
+      "sales": "불명확한 입력은 임의 보정하지 않고 추가 확인 대상으로 표시한다.",
+      "rule": "validation data",
+      "status": "GUIDE"
+    }
+  ]
+}
