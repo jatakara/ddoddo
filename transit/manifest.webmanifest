@@ -1,0 +1,9 @@
+{
+  "name": "대중교통 시간 · 길찾기",
+  "short_name": "교통시간",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#111827",
+  "lang": "ko-KR"
+}
