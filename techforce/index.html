@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<title>TechForce — On-demand Technical Workforce</title>
+<style>
+:root{--bg:#07111f;--panel:#0e1b2e;--panel2:#0a1525;--line:#263b5a;--text:#eef5ff;--muted:#91a6c5;--blue:#63a8ff;--green:#3fd493;--yellow:#ffc857;--red:#ff6f7d;--violet:#9a89ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101c,#091426 70%,#06101c);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
+button,input,select,textarea{font:inherit}.app{max-width:1320px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:14px;align-items:center}
+.brand h1{margin:0;font-size:27px}.brand small{color:var(--muted)}.account{display:flex;gap:8px;align-items:center}.credit{border:1px solid var(--line);border-radius:999px;padding:8px 11px;font-size:12px;background:#0b1728}
+nav{display:flex;gap:8px;overflow:auto;margin:18px 0}nav button,.btn{border:1px solid var(--line);background:#0c192b;color:var(--text);border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer;white-space:nowrap}.btn.primary,nav button.active{background:var(--blue);color:#06101c;border-color:var(--blue)}.btn.good{background:#16372d;color:var(--green)}.btn.warn{background:#3a321d;color:var(--yellow)}.btn.danger{background:#3a2228;color:var(--red)}
+.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{background:linear-gradient(180deg,var(--panel),#0c1829);border:1px solid var(--line);border-radius:15px;padding:15px}.kpi{grid-column:span 3}.half{grid-column:span 6}.third{grid-column:span 4}.full{grid-column:1/-1}.kpi strong{display:block;font-size:29px;margin-top:6px}.muted{color:var(--muted);font-size:12px}.hero{padding:22px;background:linear-gradient(135deg,#112d50,#101b30);border:1px solid #335c8c;border-radius:18px;margin-bottom:14px}.hero h2{font-size:29px;margin:0 0 8px;max-width:860px}.hero p{color:#b9cbe4;line-height:1.6;max-width:900px}.hero .cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.service{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:14px}.service h3{margin:3px 0 7px}.price{font-size:22px;font-weight:900;margin:12px 0 5px}.tag,.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 7px;font-size:10px;font-weight:850}.tag{color:#c7d8ee;margin:2px}.PASS,.PAID,.MATCHED,.COMPLETED{background:#15372d;color:var(--green)}.REVIEW,.QUOTED,.IN_PROGRESS,.QA,.PRIORITY{background:#3b321b;color:var(--yellow)}.BLOCK,.APPROVAL_REQUIRED,.EMERGENCY{background:#3a2228;color:var(--red)}.DRAFT,.TRIAGED,.ACCEPTANCE{background:#202f46;color:#aec7e7}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{display:block;font-size:12px;color:#b5c7df;margin:8px 0 5px}input,select,textarea{width:100%;background:#081526;border:1px solid var(--line);border-radius:9px;padding:10px;color:#fff}textarea{min-height:86px;resize:vertical}.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rolebtn{border:1px solid var(--line);background:#0a1728;color:#dce9fb;border-radius:12px;padding:12px;text-align:left;cursor:pointer}.rolebtn b{display:block}.rolebtn.active{outline:2px solid var(--blue);background:#102846}.estimate{border:1px solid #315983;background:#0c2139;border-radius:13px;padding:14px;margin-top:12px}.estimate .big{font-size:27px;font-weight:900}.flow{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:12px}.flow div{border:1px solid var(--line);border-radius:9px;padding:9px;font-size:11px;background:#0a1728}.flow b{display:block;margin-bottom:4px}.flow .on{border-color:var(--blue);background:#102846}.flow .done{border-color:#2d7b5d;background:#123126}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.actions{display:flex;gap:6px;flex-wrap:wrap}.mini{padding:6px 8px;font-size:11px}.match{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:10px;margin:7px 0;background:#0a1728}.score{font-size:20px;font-weight:900;color:var(--green)}.qa{display:grid;grid-template-columns:1fr 1fr;gap:8px}.check{border:1px solid var(--line);border-radius:10px;padding:10px;background:#091626}.check b{display:block}.bar{height:8px;background:#142237;border-radius:999px;overflow:hidden;margin-top:7px}.bar span{display:block;height:100%;background:#63a8ff}.notice{border-left:3px solid var(--blue);background:#0a1728;padding:10px;border-radius:8px;margin:9px 0}.empty{padding:28px;text-align:center;color:var(--muted)}@media(max-width:900px){.kpi,.half,.third{grid-column:1/-1}.service-grid,.roles{grid-template-columns:1fr}.form,.qa{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}.app{padding:11px}.top{align-items:flex-start}.brand h1{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><h1>TechForce</h1><small>On-demand Technical Workforce · Partner Portal</small></div>
+  <div class="account"><span class="credit">Partner Credit <b id="credit">₩5,000,000</b></span><span class="tag">Sales Demo</span></div>
+</header>
+<nav>
+<button class="active" data-p="home">대시보드</button>
+<button data-p="catalog">기술인력</button>
+<button data-p="request">지원 요청</button>
+<button data-p="orders">요청 현황</button>
+<button data-p="experts">전문가 Pool</button>
+<button data-p="quality">품질/검수</button>
+</nav>
+
+<section id="home" class="page active">
+<div class="hero">
+<h2>필요한 기술전문가를 필요한 시간만 구매하세요.</h2>
+<p>Solution Architect, Infra, Package, DBA, Kubernetes, Operations 인력을 채용하지 않고 프로젝트 단위로 요청합니다. TechForce가 Scope 정리, 전문가 배정, 표준 Runbook, 품질검수와 산출물까지 책임집니다.</p>
+<div class="cta"><button class="btn primary" onclick="go('request')">+ 기술지원 요청</button><button class="btn" onclick="go('catalog')">서비스/가격 보기</button></div>
+</div>
+<div class="grid">
+<div class="card kpi"><span class="muted">이번 달 요청</span><strong id="kReq">0</strong></div>
+<div class="card kpi"><span class="muted">진행중</span><strong id="kRun">0</strong></div>
+<div class="card kpi"><span class="muted">완료</span><strong id="kDone">0</strong></div>
+<div class="card kpi"><span class="muted">이번 달 사용액</span><strong id="kSpend">₩0</strong></div>
+<div class="card half"><h3>지금 필요한 지원</h3><div id="urgent"></div></div>
+<div class="card half"><h3>최근 요청</h3><div id="recent"></div></div>
+<div class="card full"><h3>TechForce 처리 방식</h3><div class="flow"><div class="on"><b>1. 유료 요청</b>영업이 역할/범위 선택</div><div><b>2. Scope</b>AI가 누락/난이도 정리</div><div><b>3. 결제/승인</b>금액 확정</div><div><b>4. 매칭</b>검증 전문가 배정</div><div><b>5. 수행</b>Runbook + AI Copilot</div><div><b>6. QA</b>증적/체크리스트</div><div><b>7. 완료</b>고객 결과 제출</div></div></div>
+</div>
+</section>
+
+<section id="catalog" class="page">
+<div class="card"><h2>기술인력 / 서비스 카탈로그</h2><p class="muted">가격은 프로토타입용 Demo Rate입니다. 실제 상품화 시 서비스 난이도·SLA·시간대에 따라 가격표를 분리합니다.</p><div class="service-grid" id="serviceGrid"></div></div>
+</section>
+
+<section id="request" class="page">
+<div class="grid">
+<div class="card half">
+<h2>기술지원 요청</h2>
+<label>고객 / 프로젝트</label><input id="rProject" placeholder="예: A사 ERP 신규 구축">
+<label>필요 기술역할</label><div class="roles" id="roleGrid"></div>
+<div class="form">
+<div><label>업무 유형</label><select id="rTask"></select></div>
+<div><label>우선순위</label><select id="rPriority"><option>STANDARD</option><option>PRIORITY</option><option>EMERGENCY</option></select></div>
+<div><label>희망 시작일</label><input type="date" id="rDate"></div>
+<div><label>예상 작업량</label><select id="rUnits"><option value="1">1 Unit</option><option value="2">2 Units</option><option value="3">3 Units</option><option value="5">5 Units</option></select></div>
+</div>
+<label>요청 내용</label><textarea id="rNote" placeholder="환경, 현재상태, 요청사항을 입력하세요."></textarea>
+<div class="actions"><button class="btn primary" onclick="estimate()">견적/투입계획 계산</button></div>
+</div>
+<div class="card half">
+<h2>예상 견적</h2><div id="estimateBox" class="empty">왼쪽에서 기술역할과 범위를 선택하세요.</div>
+</div>
+</div>
+</section>
+
+<section id="orders" class="page">
+<div class="card"><h2>Technical Resource Requests</h2><table><thead><tr><th>ID</th><th>고객/프로젝트</th><th>역할</th><th>금액</th><th>상태</th><th>담당</th><th>Action</th></tr></thead><tbody id="orderBody"></tbody></table></div>
+<div id="orderDetail" style="margin-top:12px"></div>
+</section>
+
+<section id="experts" class="page">
+<div class="grid"><div class="card full"><h2>Verified Expert Pool</h2><div class="notice">고객에게는 개별 프리랜서를 판매하는 것이 아니라 <b>TechForce 표준 서비스</b>를 판매합니다. 전문가는 플랫폼 내부 공급자입니다.</div><div id="expertList" class="service-grid"></div></div></div>
+</section>
+
+<section id="quality" class="page">
+<div class="grid">
+<div class="card half"><h2>Quality Control</h2><div class="qa"><div class="check"><span class="muted">Preflight</span><b>필수정보·접근권한 확인</b><div class="bar"><span style="width:92%"></span></div></div><div class="check"><span class="muted">Runbook</span><b>표준 작업절차 적용</b><div class="bar"><span style="width:88%"></span></div></div><div class="check"><span class="muted">Evidence</span><b>결과·로그·스크린샷</b><div class="bar"><span style="width:81%"></span></div></div><div class="check"><span class="muted">Acceptance</span><b>고객/영업 확인</b><div class="bar"><span style="width:75%"></span></div></div></div></div>
+<div class="card half"><h2>서비스 품질 KPI</h2><table><tbody><tr><td>First Time Right</td><td><b>94%</b></td></tr><tr><td>평균 매칭시간</td><td><b>18분</b></td></tr><tr><td>재작업률</td><td><b>4.2%</b></td></tr><tr><td>SLA 준수율</td><td><b>97%</b></td></tr><tr><td>AI 사전처리율</td><td><b>68%</b></td></tr></tbody></table></div>
+</div>
+</section>
+</div>
+
+<script>
+const SERVICES=[
+{id:'SA',name:'Solution Architect',icon:'◈',desc:'요구사항 분석, 아키텍처 설계, sizing, HA/DR, 기술상담',unit:'건',base:350000,tasks:['신규 Architecture 설계','구성 검토','증설/전환 검토','고객 기술상담']},
+{id:'INFRA',name:'Infrastructure Engineer',icon:'▣',desc:'서버, OS, Network, L7, FW, Storage 구축 및 기술지원',unit:'일',base:650000,tasks:['신규 인프라 구축','서버/OS 작업','Network/L7/FW','Storage/NFS','장애 지원']},
+{id:'PKG',name:'Package Engineer',icon:'⬡',desc:'ERP/UC/Middleware 패키지 설치, 업그레이드, 정상성 검증',unit:'건',base:450000,tasks:['신규 패키지 설치','재설치','업그레이드','정상성 점검']},
+{id:'DBA',name:'DBA',icon:'◉',desc:'Oracle/MariaDB 설치, Migration, Backup/Restore, HA, 튜닝',unit:'건',base:600000,tasks:['DB 설치','Migration','Backup/Restore','HA 구성','성능 분석']},
+{id:'K8S',name:'Kubernetes Engineer',icon:'✣',desc:'Cluster, Ingress, Storage, Registry, 배포, 장애분석',unit:'건',base:600000,tasks:['Cluster 구축','장애 분석','Upgrade','Storage','Ingress/Network']},
+{id:'OPS',name:'Operations Engineer',icon:'◎',desc:'운영점검, 장애초동, 고객문의, 모니터링, 정기 리포트',unit:'시간',base:200000,tasks:['장애 초동지원','고객 기술문의','운영점검','월간 Health Check','변경작업 지원']}
+];
+const EXPERTS=[
+{id:'E-SA01',role:'SA',name:'Architecture Expert 01',skills:['ERP','UC','HA/DR','Sizing'],rating:4.9,jobs:128,available:true},
+{id:'E-IN01',role:'INFRA',name:'Infra Expert 01',skills:['RHEL','L7','Firewall','Storage'],rating:4.8,jobs:94,available:true},
+{id:'E-PK01',role:'PKG',name:'Package Expert 01',skills:['WebtoB','JEUS','Tomcat','ERP'],rating:4.8,jobs:112,available:false},
+{id:'E-DB01',role:'DBA',name:'DBA Expert 01',skills:['Oracle','MariaDB','Backup','HA'],rating:4.9,jobs:156,available:true},
+{id:'E-K801',role:'K8S',name:'K8s Expert 01',skills:['K8s','Traefik','MetalLB','Ceph'],rating:4.9,jobs:87,available:true},
+{id:'E-OP01',role:'OPS',name:'Ops Expert 01',skills:['Monitoring','Incident','Customer Support'],rating:4.7,jobs:203,available:true}
+];
+const KEY='techforce-v1'; let selectedRole='SA', lastEstimate=null;
+const $=id=>document.getElementById(id),won=n=>'₩'+Number(n||0).toLocaleString('ko-KR');
+function state(){let s=JSON.parse(localStorage.getItem(KEY)||'null');if(!s){s={credit:5000000,orders:[{id:'TF-20261002-001',project:'Demo 고객 ERP 구축',role:'K8S',task:'Cluster 구축',priority:'PRIORITY',units:1,amount:720000,status:'MATCHED',expert:'K8s Expert 01',note:'3Node 신규 구축',date:'2026-10-05',created:'2026-10-02'}]};save(s)}return s}
+function save(s){localStorage.setItem(KEY,JSON.stringify(s))}
+function go(id){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.p===id));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));render()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+function roleName(id){return SERVICES.find(s=>s.id===id)?.name||id}
+function statusPill(s){return '<span class="pill '+s+'">'+s+'</span>'}
+function renderCatalog(){ $('serviceGrid').innerHTML=SERVICES.map(s=>'<div class="service"><span class="tag">'+s.icon+' '+s.name+'</span><h3>'+s.name+'</h3><div class="muted">'+s.desc+'</div><div class="price">'+won(s.base)+'~</div><div class="muted">기준 '+s.unit+' · Demo Rate</div><div style="margin-top:9px">'+s.tasks.map(t=>'<span class="tag">'+t+'</span>').join('')+'</div><div style="margin-top:12px"><button class="btn primary" onclick="selectRole(\''+s.id+'\')">요청</button></div></div>').join('')}
+function selectRole(id){selectedRole=id;go('request');renderRoles()}
+function renderRoles(){ $('roleGrid').innerHTML=SERVICES.map(s=>'<button class="rolebtn '+(s.id===selectedRole?'active':'')+'" onclick="selectedRole=\''+s.id+'\';renderRoles()"><b>'+s.name+'</b><span class="muted">'+won(s.base)+'~ / '+s.unit+'</span></button>').join('');let svc=SERVICES.find(s=>s.id===selectedRole);$('rTask').innerHTML=svc.tasks.map(t=>'<option>'+t+'</option>').join('')}
+function estimate(){let svc=SERVICES.find(s=>s.id===selectedRole),units=+$('rUnits').value,p=$('rPriority').value,mult=p==='EMERGENCY'?1.6:p==='PRIORITY'?1.2:1,amount=Math.round(svc.base*units*mult/1000)*1000;let ai=selectedRole==='OPS'?75:selectedRole==='PKG'?70:selectedRole==='SA'?55:60;let expertHours=Math.max(1,Math.round(units*(100-ai)/10));let risk=(p==='EMERGENCY'||['DBA','K8S'].includes(selectedRole))?'REVIEW':'PASS';lastEstimate={amount,ai,expertHours,risk,svc,units,priority:p};$('estimateBox').innerHTML='<div class="estimate"><span class="muted">예상 비용</span><div class="big">'+won(amount)+'</div><div class="muted">'+svc.name+' · '+units+' '+svc.unit+' · '+p+'</div><hr style="border:0;border-top:1px solid var(--line);margin:13px 0"><table><tr><td>AI 사전처리 예상</td><td><b>'+ai+'%</b></td></tr><tr><td>전문가 실투입 예상</td><td><b>'+expertHours+'h</b></td></tr><tr><td>검토 Gate</td><td>'+statusPill(risk)+'</td></tr><tr><td>포함</td><td>Scope / Expert / Runbook / QA / 결과보고</td></tr></table><div class="notice">가격 확정 후 Partner Credit 또는 후불계정으로 결제/승인됩니다.</div><button class="btn primary" onclick="submitRequest()">이 금액으로 지원 요청</button></div>'}
+function submitRequest(){if(!lastEstimate)return;let project=$('rProject').value.trim();if(!project)return alert('고객/프로젝트를 입력하세요.');let s=state(),n=s.orders.length+1,id='TF-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+String(n).padStart(3,'0');let o={id,project,role:selectedRole,task:$('rTask').value,priority:$('rPriority').value,units:+$('rUnits').value,amount:lastEstimate.amount,status:lastEstimate.amount>1000000?'APPROVAL_REQUIRED':'QUOTED',expert:'-',note:$('rNote').value,date:$('rDate').value||'-',created:new Date().toISOString().slice(0,10),ai:lastEstimate.ai,expertHours:lastEstimate.expertHours,risk:lastEstimate.risk};s.orders.push(o);save(s);alert('기술지원 요청이 생성되었습니다: '+id);go('orders')}
+function nextAction(o){if(o.status==='QUOTED')return '<button class="btn good mini" onclick="pay(\''+o.id+'\')">결제/승인</button>';if(o.status==='APPROVAL_REQUIRED')return '<button class="btn warn mini" onclick="approve(\''+o.id+'\')">비용 승인</button>';if(o.status==='PAID')return '<button class="btn mini" onclick="triage(\''+o.id+'\')">AI Triage</button>';if(o.status==='TRIAGED')return '<button class="btn mini" onclick="matchExpert(\''+o.id+'\')">전문가 매칭</button>';if(o.status==='MATCHED')return '<button class="btn mini" onclick="advance(\''+o.id+'\',\'IN_PROGRESS\')">작업 시작</button>';if(o.status==='IN_PROGRESS')return '<button class="btn mini" onclick="advance(\''+o.id+'\',\'QA\')">QA 제출</button>';if(o.status==='QA')return '<button class="btn mini" onclick="advance(\''+o.id+'\',\'ACCEPTANCE\')">검수 요청</button>';if(o.status==='ACCEPTANCE')return '<button class="btn good mini" onclick="advance(\''+o.id+'\',\'COMPLETED\')">완료 승인</button>';return ''}
+function findOrder(id){return state().orders.find(x=>x.id===id)}
+function pay(id){let s=state(),o=s.orders.find(x=>x.id===id);if(s.credit<o.amount)return alert('Partner Credit이 부족합니다.');s.credit-=o.amount;o.status='PAID';save(s);render()}
+function approve(id){let s=state(),o=s.orders.find(x=>x.id===id);o.status='QUOTED';save(s);render()}
+function triage(id){let s=state(),o=s.orders.find(x=>x.id===id);o.status='TRIAGED';o.triage={scope:['환경정보 확인','작업 전 Preflight','표준 Runbook 적용','결과 증적 제출'],missing:o.note?'없음':'상세 환경정보',risk:['DBA','K8S'].includes(o.role)?'고위험 변경은 Engineer 승인 필요':'표준 작업 범위'};save(s);showOrder(id);render()}
+function matchExpert(id){let s=state(),o=s.orders.find(x=>x.id===id),e=EXPERTS.find(x=>x.role===o.role&&x.available)||EXPERTS.find(x=>x.role===o.role);o.expert=e?e.name:'TechForce Ops';o.status='MATCHED';o.matchScore=e?Math.round((e.rating/5)*96):82;save(s);showOrder(id);render()}
+function advance(id,status){let s=state(),o=s.orders.find(x=>x.id===id);o.status=status;if(status==='QA')o.qa={preflight:true,runbook:true,evidence:true,customer_note:true};save(s);showOrder(id);render()}
+function showOrder(id){let o=findOrder(id);if(!o)return;let stages=['QUOTED','PAID','TRIAGED','MATCHED','IN_PROGRESS','QA','ACCEPTANCE','COMPLETED'],idx=stages.indexOf(o.status);$('orderDetail').innerHTML='<div class="card"><h2>'+o.id+' · '+o.project+'</h2><div class="flow">'+stages.map((x,i)=>'<div class="'+(i<idx?'done':i===idx?'on':'')+'"><b>'+x+'</b></div>').join('')+'</div><div class="grid" style="margin-top:12px"><div class="card half"><h3>요청 Scope</h3><table><tr><td>역할</td><td><b>'+roleName(o.role)+'</b></td></tr><tr><td>업무</td><td>'+o.task+'</td></tr><tr><td>우선순위</td><td>'+statusPill(o.priority)+'</td></tr><tr><td>금액</td><td><b>'+won(o.amount)+'</b></td></tr><tr><td>전문가</td><td>'+o.expert+'</td></tr></table></div><div class="card half"><h3>AI + Quality Layer</h3><p>AI 사전처리 예상 <b>'+(o.ai||60)+'%</b></p><p>전문가 실투입 예상 <b>'+(o.expertHours||4)+'h</b></p><p>Risk <b>'+(o.risk||'PASS')+'</b></p><div class="notice">'+(o.triage?'Scope: '+o.triage.scope.join(' · ')+'<br>Missing: '+o.triage.missing+'<br>Guardrail: '+o.triage.risk:'결제 후 AI Triage가 Scope와 누락정보를 정리합니다.')+'</div></div></div></div>'}
+function renderOrders(){let s=state();$('orderBody').innerHTML=[...s.orders].reverse().map(o=>'<tr><td><button class="btn mini" onclick="showOrder(\''+o.id+'\')">'+o.id+'</button></td><td>'+o.project+'<div class="muted">'+o.task+'</div></td><td>'+roleName(o.role)+'</td><td>'+won(o.amount)+'</td><td>'+statusPill(o.status)+'</td><td>'+o.expert+'</td><td><div class="actions">'+nextAction(o)+'</div></td></tr>').join('')||'<tr><td colspan="7" class="empty">요청이 없습니다.</td></tr>'}
+function renderExperts(){$('expertList').innerHTML=EXPERTS.map(e=>'<div class="service"><span class="tag">'+roleName(e.role)+'</span><h3>'+e.name+'</h3><div class="muted">'+e.skills.join(' · ')+'</div><div class="price">'+e.rating+' / 5.0</div><div class="muted">완료 '+e.jobs+'건 · '+(e.available?'즉시 배정 가능':'작업중')+'</div></div>').join('')}
+function renderHome(){let s=state(),month=new Date().toISOString().slice(0,7),orders=s.orders.filter(o=>o.created?.startsWith(month));$('credit').textContent=won(s.credit);$('kReq').textContent=orders.length;$('kRun').textContent=s.orders.filter(o=>!['DRAFT','COMPLETED','CANCELLED'].includes(o.status)).length;$('kDone').textContent=s.orders.filter(o=>o.status==='COMPLETED').length;$('kSpend').textContent=won(orders.filter(o=>!['DRAFT','QUOTED','APPROVAL_REQUIRED'].includes(o.status)).reduce((a,b)=>a+b.amount,0));let urgent=s.orders.filter(o=>o.priority==='EMERGENCY'||['APPROVAL_REQUIRED','QA','ACCEPTANCE'].includes(o.status)).slice(-5);$('urgent').innerHTML=urgent.length?urgent.map(o=>'<div class="match"><div><b>'+o.project+'</b><div class="muted">'+roleName(o.role)+' · '+o.task+'</div></div>'+statusPill(o.status)+'</div>').join(''):'<div class="empty">긴급/승인 대기 업무가 없습니다.</div>';$('recent').innerHTML=[...s.orders].reverse().slice(0,5).map(o=>'<div class="match"><div><b>'+o.id+'</b><div class="muted">'+o.project+' · '+roleName(o.role)+'</div></div>'+statusPill(o.status)+'</div>').join('')}
+function render(){renderHome();renderCatalog();renderRoles();renderOrders();renderExperts()}
+render();
+</script>
+</body>
+</html>
