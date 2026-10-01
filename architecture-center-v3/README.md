@@ -5,7 +5,7 @@ ERP / UC / Infrastructure 표준화와 예외 통제를 위한 Architecture Gove
 ## v3 핵심 변경
 
 - **PostgreSQL**: 다중 사용자/동시 쓰기 대응
-- **JWT Authentication + RBAC**: ADMIN / ARCHITECT / APPROVER / VIEWER
+- **SSO/Reverse-Proxy Identity Header + RBAC**: ADMIN / ARCHITECT / APPROVER / VIEWER
 - **User Provisioning API/UI**: ADMIN이 PoC 사용자와 Role 생성
 - **Approval Workflow**: DRAFT → SUBMITTED → APPROVED / REJECTED
 - **Versioned Rule Engine**: 판정 기준을 Rule Set 버전으로 관리
@@ -20,7 +20,12 @@ ERP / UC / Infrastructure 표준화와 예외 통제를 위한 Architecture Gove
                  ┌──────────────────┐
 Browser / Mobile │ Architecture UI  │
                  └────────┬─────────┘
-                          │ HTTPS / JWT
+                          │ HTTPS
+                 ┌────────▼─────────┐
+                 │ SSO / IAP / RP   │
+                 │ inject identity  │
+                 └────────┬─────────┘
+                          │ X-Architecture-User
                  ┌────────▼─────────┐
                  │ FastAPI API      │
                  ├──────────────────┤
@@ -63,17 +68,14 @@ architecture-center-v3/
 ```bash
 cd architecture-center-v3
 cp .env.example .env
-# .env 의 JWT_SECRET / BOOTSTRAP_ADMIN_PASSWORD 변경 권장
-
 docker compose up -d --build
 ```
 
 접속: `http://localhost:8000`
 
-PoC 기본 계정(환경변수 미변경 시):
+PoC 기본 사용자: `admin`
 
-- Username: `admin`
-- Password: `ChangeMeNow!`
+백엔드 API는 `X-Architecture-User` 헤더로 사용자 식별자를 받습니다. 운영에서는 이 헤더를 클라이언트가 직접 지정하지 못하도록 차단하고, 신뢰 가능한 SSO/IAP/Reverse Proxy만 주입하도록 구성해야 합니다.
 
 ## GitHub Pages
 
@@ -100,17 +102,17 @@ PoC 기본 계정(환경변수 미변경 시):
 
 PoC 상태에서도 작성/승인 권한을 분리했습니다. 운영 전환 시 추가 권고:
 
-- 사내 SSO(OIDC/SAML)로 로컬 비밀번호 인증 대체
-- JWT Secret을 Vault/KMS/Secret Manager로 이동
+- 사내 SSO(OIDC/SAML) 또는 Identity-Aware Proxy가 인증 후 사용자 헤더 주입
+- Backend 직접 접근 차단 및 Proxy가 외부 `X-Architecture-User` 헤더 제거/재작성
 - HTTPS / Reverse Proxy / WAF 적용
-- CSRF/CORS 정책 명시
+- CORS 정책 명시
 - PostgreSQL TLS 및 Backup/PITR
 - 감사로그 immutable storage 전송
 - 사용자/권한 provisioning을 IAM과 연계
 
 ## Scalability
 
-SQLite 대신 PostgreSQL로 전환했으므로 여러 사용자의 동시 등록/승인에 적합합니다. API 계층은 stateless JWT 구조라 FastAPI 인스턴스를 수평 확장할 수 있습니다.
+SQLite 대신 PostgreSQL로 전환했으므로 여러 사용자의 동시 등록/승인에 적합합니다. FastAPI 인스턴스는 상태를 서버 메모리에 보관하지 않으므로 수평 확장할 수 있습니다.
 
 다음 단계에서는 Redis 캐시보다 먼저 **DB Connection Pool, API rate limit, SSO, Audit 보존정책**을 적용하는 것이 우선입니다.
 
@@ -119,6 +121,6 @@ SQLite 대신 PostgreSQL로 전환했으므로 여러 사용자의 동시 등록
 | 선택 | 장점 | 단점 |
 |---|---|---|
 | PostgreSQL | 동시성, 트랜잭션, 운영 확장성 | 별도 DB 운영 필요 |
-| JWT | API 수평 확장 용이 | 토큰 폐기/회수 전략 필요 |
+| Trusted identity header | 기존 SSO/IAP 연계가 단순 | Proxy 우회 차단이 필수 |
 | Versioned Rule Set | 판정 근거 추적 가능 | Rule 변경 관리 프로세스 필요 |
 | Approval Gate | 비표준 리스크 통제 | 승인 병목 가능 |
