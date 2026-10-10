@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OmniEsol SA 실전 가이드 | ERP · UC · Kubernetes · Oracle 인프라 기초</title>
+  <meta name="description" content="OmniEsol을 사용하는 사람들을 위한 ERP, UC, Kubernetes, Oracle 기반 기초 인프라 개념과 실무 아키텍처 가이드" />
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1e3a8a;
+      --brand2: #0f766e;
+      --warn: #92400e;
+      --soft: #eef2ff;
+      --soft2: #ecfdf5;
+      --code: #111827;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      line-height: 1.7;
+    }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 28px 20px;
+    }
+    aside h1 {
+      font-size: 20px;
+      line-height: 1.35;
+      margin: 0 0 8px;
+      color: #fff;
+    }
+    aside p {
+      font-size: 13px;
+      color: #cbd5e1;
+      margin: 0 0 24px;
+    }
+    nav a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+    nav a:hover {
+      background: rgba(255,255,255,0.08);
+      text-decoration: none;
+      color: #fff;
+    }
+    main {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 42px 34px 80px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #111827 0%, #1e3a8a 55%, #0f766e 100%);
+      color: white;
+      border-radius: 26px;
+      padding: 56px 48px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+      margin-bottom: 34px;
+    }
+    .hero .eyebrow {
+      font-size: 14px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #bfdbfe;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .hero h2 {
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.1;
+      margin: 0 0 18px;
+    }
+    .hero p {
+      font-size: 18px;
+      max-width: 820px;
+      color: #e0f2fe;
+      margin: 0;
+    }
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 26px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 34px;
+      margin: 22px 0;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.04);
+    }
+    h2 {
+      font-size: 30px;
+      line-height: 1.25;
+      margin: 0 0 18px;
+      color: #111827;
+    }
+    h3 {
+      font-size: 22px;
+      line-height: 1.35;
+      margin: 32px 0 12px;
+      color: #1f2937;
+    }
+    h4 {
+      font-size: 17px;
+      margin: 24px 0 8px;
+      color: #374151;
+    }
+    p { margin: 0 0 14px; }
+    .lead { font-size: 18px; color: #374151; }
+    .note, .risk, .principle {
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      border: 1px solid var(--line);
+    }
+    .note { background: var(--soft); }
+    .principle { background: var(--soft2); }
+    .risk { background: #fffbeb; border-color: #fde68a; }
+    .risk strong { color: var(--warn); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0 26px;
+      overflow: hidden;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 11px 12px;
+      vertical-align: top;
+    }
+    th {
+      background: #f3f4f6;
+      color: #111827;
+      text-align: left;
+      font-weight: 800;
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+    pre {
+      background: var(--code);
+      color: #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0 24px;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fff;
+    }
+    .card h3 { margin-top: 0; font-size: 18px; }
+    .toc-list {
+      columns: 2;
+      column-gap: 34px;
+      padding-left: 20px;
+    }
+    .toc-list li { break-inside: avoid; margin-bottom: 8px; }
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    @media (max-width: 900px) {
+      .layout { display: block; }
+      aside { position: relative; height: auto; }
+      main { padding: 24px 16px 60px; }
+      .hero { padding: 34px 24px; border-radius: 20px; }
+      section { padding: 24px 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .toc-list { columns: 1; }
+    }
+    @media print {
+      body { background: #fff; }
+      aside { display: none; }
+      .layout { display: block; }
+      main { max-width: none; padding: 0; }
+      section, .hero { break-inside: avoid; box-shadow: none; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>OmniEsol SA 실전 가이드</h1>
+      <p>ERP · UC · Kubernetes · Oracle 기반 인프라 기초와 실무 아키텍처</p>
+      <nav>
+        <a href="#purpose">집필 목적</a>
+        <a href="#reader">대상 독자</a>
+        <a href="#concept">책의 콘셉트</a>
+        <a href="#toc">전체 목차</a>
+        <a href="#chapter1">1장 초안</a>
+        <a href="#landscape">아키텍처 유형</a>
+        <a href="#compare">통합형 vs 분리형</a>
+        <a href="#github">GitHub 저장 방법</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="hero">
+        <div class="eyebrow">Practical System Administration Guide</div>
+        <h2>OmniEsol SA 실전 가이드</h2>
+        <p>OmniEsol을 사용하는 사람들에게 꼭 필요한 ERP, UC, Kubernetes, Oracle, Network, Security의 기초 인프라 개념을 실무 언어로 정리한 책입니다.</p>
+        <div class="meta">
+          <span class="badge">SA 관점</span>
+          <span class="badge">SAP BC 실무서형 구성</span>
+          <span class="badge">GitHub Pages 배포 가능</span>
+          <span class="badge">v0.1 HTML Draft</span>
+        </div>
+      </div>
+
+      <section id="purpose">
+        <h2>집필 목적</h2>
+        <p class="lead">이 책은 OmniEsol 제품 기능을 설명하는 매뉴얼이 아니다. 이 책의 목적은 OmniEsol을 실제로 도입하고 운영하는 사람들이 반드시 알아야 할 기초 인프라 개념과 실무 판단 기준을 정리하는 것이다.</p>
+        <p>ERP와 UC 시스템은 단순히 설치만으로 완성되지 않는다. 사용자 수, 동시 접속, DB 성능, 네트워크 구조, 방화벽 정책, SSL 인증서, Kubernetes 운영, 백업과 복구 체계가 함께 맞물려야 안정적으로 운영된다.</p>
+        <div class="principle">
+          <strong>핵심 원칙:</strong> OmniEsol은 설치하는 시스템이 아니라, 안정적으로 운영되도록 설계해야 하는 업무 플랫폼이다.
+        </div>
+      </section>
+
+      <section id="reader">
+        <h2>대상 독자</h2>
+        <table>
+          <thead>
+            <tr><th>대상</th><th>이 책에서 얻을 수 있는 것</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>고객사 전산 담당자</td><td>OmniEsol 구축 전 반드시 준비해야 할 서버, 네트워크, 보안, 백업 기준을 이해할 수 있다.</td></tr>
+            <tr><td>영업 / 프리세일즈</td><td>고객 규모와 도입 범위에 맞는 표준 아키텍처를 설명할 수 있다.</td></tr>
+            <tr><td>PM / PL</td><td>설치 지연과 장애를 줄이기 위한 사전 점검 항목을 관리할 수 있다.</td></tr>
+            <tr><td>인프라 엔지니어</td><td>ERP, UC, Kubernetes, DB, Network의 역할과 경계를 이해할 수 있다.</td></tr>
+            <tr><td>SA / TA</td><td>통합형, 분리형, ERP 단독형, UC 단독형을 고객 리스크 기준으로 판단할 수 있다.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept">
+        <h2>책의 콘셉트</h2>
+        <p>이 책은 SAP BC 실무서처럼 시스템을 맡은 사람이 따라가야 하는 흐름을 기준으로 구성한다. 개념 설명에서 끝나는 것이 아니라 설치 준비, 설치 후 검증, 운영, 모니터링, 패치, 장애 대응, 고객 인수인계까지 다룬다.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>기초 개념</h3>
+            <p>ERP, UC, AP, DB, Kubernetes, L4/L7, SSL, 방화벽, 백업의 역할을 정리한다.</p>
+          </div>
+          <div class="card">
+            <h3>표준 아키텍처</h3>
+            <p>ERP 단독형, UC 단독형, 통합형 K8s, 분리형 구조를 비교한다.</p>
+          </div>
+          <div class="card">
+            <h3>실무 절차</h3>
+            <p>설치 전 점검, 설치 후 검증, 운영 점검, 장애 대응 절차를 정리한다.</p>
+          </div>
+          <div class="card">
+            <h3>리스크 관리</h3>
+            <p>비용 절감보다 장애 격리, 데이터 안정성, 보안 분리, 장기 운영성을 우선한다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="toc">
+        <h2>전체 목차 초안</h2>
+        <ol class="toc-list">
+          <li>OmniEsol이란 무엇이며 SA의 역할은?</li>
+          <li>OmniEsol System Landscape</li>
+          <li>OmniEsol System Architecture</li>
+          <li>Installation - 준비 단계</li>
+          <li>Installation - 설치 단계</li>
+          <li>Post Installation</li>
+          <li>System Administration I - 기본 운영</li>
+          <li>System Administration II - Monitoring</li>
+          <li>Patch & Upgrade</li>
+          <li>Troubleshooting & Tips</li>
+          <li>Database Management</li>
+          <li>Network & Security Configuration</li>
+          <li>Remote Support & Technical Support</li>
+          <li>Appendix I - Client / Agent / 사용자 접속</li>
+          <li>Appendix II - 실무 문서 양식</li>
+        </ol>
+      </section>
+
+      <section id="chapter1">
+        <h2>1장. OmniEsol이란 무엇이며 SA의 역할은?</h2>
+        <h3>1.1 OmniEsol을 인프라 관점에서 이해해야 하는 이유</h3>
+        <p>OmniEsol은 기업의 업무 데이터를 처리하는 ERP 영역과 메일, 메신저, 협업, 알림 등 사용자 커뮤니케이션을 담당하는 UC 영역이 결합된 업무 플랫폼이다. 겉으로는 하나의 제품처럼 보이지만, 실제 인프라 관점에서는 Web, WAS, Database, Kubernetes, Network, Security, Backup이 결합된 복합 시스템이다.</p>
+        <p>따라서 OmniEsol을 안정적으로 구축하려면 기능 목록보다 시스템 구조를 먼저 이해해야 한다. 사용자가 접속하는 경로, 요청이 처리되는 계층, 데이터가 저장되는 위치, 장애가 발생했을 때 영향 범위가 어디까지 확산되는지를 파악해야 한다.</p>
+
+        <h3>1.2 ERP와 UC의 성격 차이</h3>
+        <table>
+          <thead>
+            <tr><th>구분</th><th>ERP</th><th>UC</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>핵심 목적</td><td>회계, 인사, 영업, 구매 등 업무 트랜잭션 처리</td><td>메일, 메신저, 협업, 일정, 알림 처리</td></tr>
+            <tr><td>중요 요소</td><td>데이터 정합성, DB 안정성, 트랜잭션 무결성</td><td>실시간 접속, 세션 유지, 외부 접속, 확장성</td></tr>
+            <tr><td>주요 부하</td><td>SQL, 업무 로직, 배치, 보고서</td><td>WebSocket, 메일, 알림, 검색, 파일 업로드</td></tr>
+            <tr><td>확장 방식</td><td>AP 증설, WAS 튜닝, DB 튜닝</td><td>Pod 확장, Worker Node 증설, Ingress 조정</td></tr>
+            <tr><td>장애 영향</td><td>업무 처리 중단, 데이터 처리 지연</td><td>메일/메신저/알림 지연, 외부 접속 장애</td></tr>
+          </tbody>
+        </table>
+
+        <h3>1.3 SA의 역할</h3>
+        <p>OmniEsol 환경에서 SA는 단순 설치 담당자가 아니다. SA는 고객 요구사항을 인프라 설계 기준으로 변환하고, 제품 구조와 고객 환경 사이의 간극을 줄이는 역할을 수행한다.</p>
+        <table>
+          <thead>
+            <tr><th>SA 역할</th><th>설명</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>아키텍처 설계</td><td>ERP, UC, DB, K8s, Network, Security 전체 구조를 정의한다.</td></tr>
+            <tr><td>Sizing 기준 수립</td><td>사용자 수, 동시 접속, 업무량, 외부 접속 기준으로 서버 자원을 산정한다.</td></tr>
+            <tr><td>설치 전 점검</td><td>OS, 네트워크, 방화벽, DNS, NTP, Storage, Backup 준비 상태를 확인한다.</td></tr>
+            <tr><td>리스크 관리</td><td>성능, 보안, 라이선스, 장애 격리, 백업/복구 리스크를 사전에 고지한다.</td></tr>
+            <tr><td>운영 기준 정의</td><td>모니터링, 로그, 계정, 인증서, 패치, 장애 대응 기준을 수립한다.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="landscape">
+        <h2>OmniEsol 아키텍처 유형</h2>
+        <p>OmniEsol 아키텍처는 제품 기준이 아니라 고객 도입 범위와 운영 리스크 기준으로 분류해야 한다. 책에서는 최소한 네 가지 표준 아키텍처를 다룬다.</p>
+        <table>
+          <thead>
+            <tr><th>유형</th><th>설명</th><th>권장 고객</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ERP 단독형</td><td>ERP 업무만 구축하는 구조. Oracle DB 안정성과 WAS 성능이 핵심이다.</td><td>ERP만 도입하는 고객</td></tr>
+            <tr><td>UC 단독형</td><td>UC 서비스를 Kubernetes 기반으로 구축하는 구조. 외부 접속과 실시간 연결이 핵심이다.</td><td>그룹웨어/메일/협업 중심 고객</td></tr>
+            <tr><td>통합형 K8s</td><td>ERP와 UC를 하나의 Kubernetes 또는 공통 플랫폼 영역에서 함께 운영하는 구조.</td><td>소규모~중견, 비용 효율 중시 고객</td></tr>
+            <tr><td>분리형</td><td>ERP와 UC를 서버, 네트워크, DB, 운영 책임 관점에서 분리하는 구조.</td><td>중대형, 공공, 금융, 장애 격리 요구 고객</td></tr>
+          </tbody>
+        </table>
+
+        <h3>전체 Landscape 예시</h3>
+        <pre><code>[User]
+  │
+  ▼
+[Firewall / L4 / L7 / SSL]
+  │
+  ├────────────── [ERP Zone]
+  │                 ├─ WEB
+  │                 ├─ WAS
+  │                 └─ Oracle DB
+  │
+  └────────────── [UC Zone]
+                    ├─ Kubernetes Cluster
+                    ├─ Ingress
+                    ├─ UC Pods
+                    ├─ MariaDB
+                    └─ Redis</code></pre>
+      </section>
+
+      <section id="compare">
+        <h2>통합형(K8s)과 분리형의 장단점</h2>
+        <p>통합형(K8s)은 비용 효율형 구조이고, 분리형은 리스크 관리형 구조다. 아키텍처 선택은 서버 수를 줄이는 문제가 아니라 고객의 업무 중요도, 사용자 규모, 보안 요구사항, 장애 허용 범위를 기준으로 결정해야 한다.</p>
+        <table>
+          <thead>
+            <tr><th>비교 항목</th><th>통합형(K8s)</th><th>분리형</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>초기 구축비</td><td>낮음</td><td>높음</td></tr>
+            <tr><td>서버 수</td><td>적음</td><td>많음</td></tr>
+            <tr><td>구성 단순성</td><td>높음</td><td>낮음</td></tr>
+            <tr><td>장애 격리</td><td>약함</td><td>강함</td></tr>
+            <tr><td>성능 예측성</td><td>중간</td><td>높음</td></tr>
+            <tr><td>보안 분리</td><td>제한적</td><td>우수</td></tr>
+            <tr><td>확장성</td><td>중간</td><td>높음</td></tr>
+            <tr><td>장애 분석 난이도</td><td>높음</td><td>중간</td></tr>
+            <tr><td>권장 용도</td><td>소규모/중견, PoC, 비용절감형</td><td>중대형, 공공, 금융, 중요 업무</td></tr>
+          </tbody>
+        </table>
+        <div class="risk">
+          <strong>주의:</strong> 통합형은 비용과 운영 포인트를 줄일 수 있지만, UC 부하나 Kubernetes 장애가 ERP 서비스에 영향을 줄 수 있다. 운영 환경에서는 Resource Limit, Namespace 분리, Node 분리, DB 분리, 모니터링 기준을 반드시 설계해야 한다.
+        </div>
+      </section>
+
+      <section id="github">
+        <h2>GitHub에 저장하는 방법</h2>
+        <p>이 파일을 <code>index.html</code> 이름으로 저장하면 GitHub Pages에서 바로 책 형태로 공개할 수 있다.</p>
+        <h3>1단계. Repository 생성</h3>
+        <pre><code>Repository name: omniesol-sa-guide
+Visibility: Public 또는 Private</code></pre>
+        <h3>2단계. 파일 업로드</h3>
+        <pre><code>index.html
+README.md</code></pre>
+        <h3>3단계. GitHub Pages 설정</h3>
+        <pre><code>Settings → Pages → Build and deployment
+Source: Deploy from a branch
+Branch: main
+Folder: /root</code></pre>
+        <h3>4단계. 접속 URL</h3>
+        <pre><code>https://사용자계정.github.io/omniesol-sa-guide/</code></pre>
+      </section>
+
+      <div class="footer">
+        OmniEsol SA 실전 가이드 v0.1 · Draft for GitHub Pages · 작성 목적: OmniEsol 사용자를 위한 기초 인프라 개념 정리
+      </div>
+    </main>
+  </div>
+</body>
+</html>
