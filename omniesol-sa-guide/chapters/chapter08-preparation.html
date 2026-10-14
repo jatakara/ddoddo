@@ -27,5 +27,22 @@
 <tr><td>프록시</td><td>TCP 전달인지 HTTP Reverse Proxy인지, TLS 종료 위치는?</td></tr>
 <tr><td>헤더</td><td>Host, X-Forwarded-For/Proto 전달과 신뢰 경계는?</td></tr>
 <tr><td>장기 연결</td><td>WebSocket·SSE·업로드의 timeout, buffering을 검증했는가?</td></tr></table></section>
+<section id="s85"><h2>8.5 DNS·TLS·인증</h2>
+<p>내부 PC는 내부 DNS를 사용하고 외부 도메인 조회는 내부 DNS의 Forwarder/재귀 정책을 검토한다. 공용 DNS를 보조 DNS로 무분별하게 추가하면 내부 전용 레코드가 불안정해질 수 있다. Split-horizon DNS는 내부/외부 조회 결과를 각각 기록한다.</p>
+<table><tr><th>영역</th><th>확인 항목</th></tr>
+<tr><td>DNS</td><td>FQDN, VIP·공인 IP, TTL, 내부·외부 조회 결과</td></tr>
+<tr><td>TLS</td><td>인증서 SAN, 만료일, 체인, TLS 종료 지점</td></tr>
+<tr><td>인증</td><td>SSO 리다이렉트, 쿠키 SameSite/Secure/Domain</td></tr>
+<tr><td>브라우저</td><td>CSP frame-ancestors, X-Frame-Options, CORS, iframe 정책</td></tr>
+<tr><td>프록시</td><td>Host/Proto 헤더와 HTTPS 리다이렉트 일관성</td></tr></table>
+<p>ERP 화면은 열리지만 UC 메뉴만 보이지 않는다면 DNS → TCP/TLS → HTTP → 브라우저 개발자 도구 → 인증 상태 순으로 분석한다.</p></section>
+<section id="s86"><h2>8.6 보안정책·계정</h2>
+<table><tr><th>항목</th><th>기준</th></tr>
+<tr><td>방화벽</td><td>출발지·목적지·포트·방향·업무 목적·만료일 명시</td></tr>
+<tr><td>관리 계정</td><td>최소 권한, 접근 승인, 관리망·접속 기록</td></tr>
+<tr><td>비밀정보</td><td>DB 암호·인증서 개인키·토큰을 승인된 저장소에 보관</td></tr>
+<tr><td>취약점</td><td>OS·미들웨어·이미지 점검과 조치 책임자 지정</td></tr>
+<tr><td>변경</td><td>WAF 예외·TLS·방화벽 변경의 승인·검증·원복 절차</td></tr></table>
+<div class="warn">임시 예외는 최소 범위·기간·책임자를 기록한다. 설치 편의를 위해 광범위한 방화벽 허용을 상시 유지하지 않는다.</div></section>
 <!-- CHAPTER8_CONTINUATION -->
 </main></body></html>
