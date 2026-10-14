@@ -1,0 +1,31 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>8장 설치 전 인프라 준비 | OmniEsol SA 실전 가이드</title><meta name="description" content="OmniEsol 설치 전 서버·네트워크·보안·DB·Kubernetes 사전점검 가이드">
+<style>body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.75 system-ui,"Malgun Gothic",sans-serif}header{background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:42px max(20px,calc((100vw - 1000px)/2))}header a{color:#bfdbfe}h1{font-size:2.3rem}main{max-width:1000px;margin:auto;padding:24px 16px}section{background:white;padding:28px;border:1px solid #dbe3ef;border-radius:16px;margin:20px 0}h2{color:#1e3a8a}table{border-collapse:collapse;width:100%;margin:15px 0}td,th{border:1px solid #dbe3ef;padding:10px;text-align:left;vertical-align:top}th{background:#edf4ff}pre{background:#0f172a;color:#e2e8f0;padding:18px;overflow:auto;border-radius:12px}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:14px}.note{background:#eef2ff;border-left:4px solid #2563eb;padding:14px}a{color:#2563eb}header a{color:#bfdbfe}</style></head>
+<body><header><p><a href="../index.html">← 목차</a> · <a href="chapter07-sizing.html">7장으로</a></p><h1>8장. 설치 전 인프라 준비</h1><p>설치 명령보다 중요한 것은 사전 준비의 완성도다. 서버·네트워크·보안·데이터·운영 책임을 확인하고 설치 가능 여부를 증거로 판단한다.</p></header><main>
+<section><h2>학습 목표와 적용 범위</h2><p>이 장을 마치면 고객사 IT 담당자, PM, SA가 무엇을 누가 언제까지 어떤 증거로 확인해야 하는지 설명할 수 있다.</p><div class="warn">이 장은 일반적인 엔터프라이즈 인프라 점검 방법론이다. 공식 OmniEsol 지원 버전, 필수 포트, 최소 사양과 라이선스 조건을 대체하지 않는다. 실제 구축은 제품 공식 검증 기준을 우선한다.</div></section>
+<section id="s81"><h2>8.1 사전 준비 프로세스</h2><pre>업무 범위 → 아키텍처 → 서버/OS/스토리지 준비
+       → DNS/네트워크/보안 정책 → DB/백업
+       → 증적 수집 → Go/No-Go 승인 → 설치</pre><p>서버에 SSH로 접속할 수 있다는 사실은 설치 준비 완료를 의미하지 않는다. 사용자 요청이 DNS, TLS, 프록시, AP, DB를 거쳐 정상적으로 응답하는 전체 경로를 검증해야 한다.</p></section>
+<section id="s82"><h2>8.2 서비스 범위와 책임(R&amp;R)</h2><table><tr><th>구분</th><th>사전 확정 사항</th><th>증적</th></tr>
+<tr><td>도입 범위</td><td>ERP/UC 단독, 통합형, 분리형; 운영·개발·DR 구분</td><td>서비스 범위표·구성도</td></tr>
+<tr><td>사용자 접속</td><td>내부/외부/모바일, 도메인, VIP, 인증 방식</td><td>접속 경로도</td></tr>
+<tr><td>서버·OS</td><td>CPU, RAM, OS 지원 버전, 계정, 시간 동기화</td><td>서버 점검표</td></tr>
+<tr><td>네트워크·보안</td><td>DNS, NAT, L4/L7, 방화벽, WAF, TLS</td><td>정책 승인·통신 테스트</td></tr>
+<tr><td>DB·백업</td><td>DB 버전·계정·스토리지, RTO/RPO, 복구 절차</td><td>DB 점검·복원 시험</td></tr>
+<tr><td>제품</td><td>검증 패키지·설치 순서·기능 테스트</td><td>설치계획서</td></tr></table>
+<p>작업 수행자, 검토자, 최종 승인자를 분리하고 고객사·구축사·미들웨어사 간 경계를 문서화한다. 미결 항목에는 담당자와 완료 기한을 지정한다.</p></section>
+<section id="s83"><h2>8.3 서버·OS·가상화</h2><table><tr><th>항목</th><th>확인 기준</th></tr>
+<tr><td>CPU/메모리</td><td>7장 Sizing 산정값, 가상화 오버커밋, 장애 시 여유 용량</td></tr>
+<tr><td>스토리지</td><td>OS/DB/로그/백업 공간과 IOPS·지연시간, 증설 계획</td></tr>
+<tr><td>OS</td><td>공식 지원 배포판·패치 수준, 호스트명, NTP, DNS</td></tr>
+<tr><td>계정</td><td>설치·운영 계정 분리, 최소 권한, 접근 기록</td></tr>
+<tr><td>가용성</td><td>호스트·전원·네트워크·스토리지의 단일 장애점</td></tr></table><p>VM 스냅샷은 장기 백업의 대체재가 아니다. 서버 이중화도 스토리지나 인증 경로가 단일 장애점이면 서비스 가용성을 보장하지 못한다.</p></section>
+<section id="s84"><h2>8.4 네트워크 접속 경로</h2><pre>외부 사용자 → 공인 DNS → WAF/L7 → 중계 WEB → 내부 AP → DB
+내부 사용자 → 내부 DNS → 내부 VIP/WEB → 내부 AP → DB
+                                      └→ UC(별도 도메인/인증)</pre>
+<p>내부 ERP 화면이 열려도 iframe으로 불러오는 UC 메뉴가 별도 도메인이라면 UC 경로를 별도로 확인해야 한다.</p><table><tr><th>항목</th><th>질문</th></tr>
+<tr><td>주소</td><td>VIP, NAT 전후 IP·포트, 라우팅·응답 경로가 일치하는가?</td></tr>
+<tr><td>프록시</td><td>TCP 전달인지 HTTP Reverse Proxy인지, TLS 종료 위치는?</td></tr>
+<tr><td>헤더</td><td>Host, X-Forwarded-For/Proto 전달과 신뢰 경계는?</td></tr>
+<tr><td>장기 연결</td><td>WebSocket·SSE·업로드의 timeout, buffering을 검증했는가?</td></tr></table></section>
+<!-- CHAPTER8_CONTINUATION -->
+</main></body></html>
