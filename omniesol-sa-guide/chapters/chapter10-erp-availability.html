@@ -1,0 +1,37 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>10장 2부 | ERP 가용성·복구</title><style>body{margin:0;background:#f3f6fb;color:#1e293b;font:16px/1.8 system-ui,"Malgun Gothic",sans-serif}header{background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:38px max(18px,calc((100vw - 960px)/2))}header a{color:#bfdbfe}main{max-width:960px;margin:auto;padding:20px}section{background:white;border:1px solid #dbe3ef;border-radius:14px;padding:26px;margin:18px 0}h2{color:#1e3a8a}a{color:#1d4ed8}table{width:100%;border-collapse:collapse}td,th{border:1px solid #dbe3ef;padding:10px;text-align:left;vertical-align:top}th{background:#eff6ff}.note{background:#eff6ff;border-left:4px solid #2563eb;padding:14px}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:14px}@media(max-width:700px){section{padding:18px}table{display:block;overflow-x:auto}}</style></head><body><header><a href="chapter10-erp-standalone.html">← 10장 목차</a><h1>10장 2부. ERP 고가용성과 복구</h1><p>10.5~10.8 · 장애 영역, 세션, DB 정합성, RPO/RTO, DR</p></header><main>
+<section id="s105"><h2>10.5 장애 격리와 고가용성(HA)</h2><p>가용성 설계는 장애를 없애는 것이 아니라, 장애 발생 시 영향 범위를 줄이고 정상 상태로 복귀하는 시간을 통제하는 것이다. WEB/WAS 이중화와 DB 이중화는 해결하는 문제가 다르다.</p>
+<table><tr><th>장애 상황</th><th>영향</th><th>설계·검증 항목</th></tr>
+<tr><td>WEB/WAS 프로세스 장애</td><td>일부 요청 실패 또는 세션 단절</td><td>헬스체크, 연결 배제, 재시도 안전성, 세션 처리</td></tr>
+<tr><td>물리 호스트 장애</td><td>같은 호스트 VM 동시 중단</td><td>서로 다른 호스트·장애 영역에 배치</td></tr>
+<tr><td>로드밸런서 장애</td><td>모든 요청의 진입점 상실</td><td>LB 자체 이중화와 DNS/가상 IP 전환</td></tr>
+<tr><td>DB 장애</td><td>쓰기 불가, 데이터 정합성 위험</td><td>공식 지원 HA, 전환 절차, 복제 지연과 무결성</td></tr>
+<tr><td>공유 스토리지 장애</td><td>다수 계층 동시 영향</td><td>독립 장애 영역과 복원 가능성</td></tr></table>
+<div class="note"><strong>N+1의 의미:</strong> 정상 시 N개의 노드가 처리하는 부하를 장애 시 남은 노드가 수용할 수 있어야 한다. 2대가 각각 90% 사용 중이면 한 대 장애 시 서비스 유지가 어려울 수 있다.</div></section>
+<section id="s106"><h2>10.6 세션·연결 풀·배포 중 가용성</h2>
+<p>WAS를 여러 대로 늘리면 요청 분산은 쉬워지지만, 로그인 상태·업무 중 임시 데이터·장기 요청·DB 연결의 일관성이 새로운 설계 과제가 된다.</p>
+<table><tr><th>구성 요소</th><th>설계 질문</th></tr>
+<tr><td>사용자 세션</td><td>세션 고정(Sticky) 여부, 세션 공유·복원 가능성, 장애 시 재로그인 정책</td></tr>
+<tr><td>DB 연결 풀</td><td>WAS 인스턴스 증가 시 DB 최대 연결 수를 초과하지 않는가?</td></tr>
+<tr><td>헬스체크</td><td>프로세스 생존 확인과 실제 업무 준비 상태를 구분하는가?</td></tr>
+<tr><td>배포</td><td>요청 Drain, 세션 종료, 롤백 기준, 스키마 호환성을 검증했는가?</td></tr>
+<tr><td>재시도</td><td>결제·전표·승인 등 중복 실행 위험이 있는 작업을 무조건 재시도하지 않는가?</td></tr></table>
+<div class="warn">헬스체크 200 OK는 업무 정상성을 증명하지 않는다. 로그인·핵심 조회·쓰기 트랜잭션·외부 연계의 합성 테스트를 별도로 둔다.</div></section>
+<section id="s107"><h2>10.7 DB 고가용성과 트랜잭션 정합성</h2>
+<p>DB의 이중화 방식은 엔진과 라이선스, 제품 검증 범위에 따라 달라진다. 동기·비동기 복제, 자동 전환, 단일 쓰기 노드 정책을 검토하고 애플리케이션의 재접속 동작을 함께 시험한다.</p>
+<table><tr><th>설계 항목</th><th>실무 검증</th></tr>
+<tr><td>복제</td><td>쓰기 확정 기준과 복제 지연을 확인한다.</td></tr>
+<tr><td>전환</td><td>Failover 중 연결 실패·재연결·타임아웃을 측정한다.</td></tr>
+<tr><td>Split-brain</td><td>동시에 두 쓰기 노드가 활성화되지 않도록 제어한다.</td></tr>
+<tr><td>정합성</td><td>전환 전후 전표·첨부·시퀀스 등 핵심 데이터 일관성을 검증한다.</td></tr>
+<tr><td>백업</td><td>복제는 백업이 아니며 삭제·논리 오류도 복제될 수 있음을 전제한다.</td></tr></table>
+<p>Oracle 등 특정 DB를 사용할 경우에도 이 문서의 일반론보다 공급사 공식 지원 조합과 DBA 검증 결과를 우선한다.</p></section>
+<section id="s108"><h2>10.8 백업·복구·DR 설계</h2>
+<p>서비스 중요도에 따라 RPO(허용 데이터 손실)와 RTO(목표 복구 시간)를 합의한 뒤 기술을 선택한다. '백업이 있다'와 '목표 시간 안에 복구된다'는 서로 다른 주장이다.</p>
+<table><tr><th>시나리오</th><th>필요한 복구 설계</th><th>검증 방식</th></tr>
+<tr><td>단일 WAS 장애</td><td>다른 인스턴스로 요청 우회</td><td>인스턴스 중단 시험</td></tr>
+<tr><td>DB 손상</td><td>정합성 백업 + 로그 기반 시점 복구</td><td>별도 환경 복원·데이터 검증</td></tr>
+<tr><td>랜섬웨어·관리 실수</td><td>격리된 불변 백업, 권한 분리</td><td>백업 삭제 저항성과 복구 시험</td></tr>
+<tr><td>센터 전체 장애</td><td>DR 사이트, 데이터 동기화, DNS·접속 전환</td><td>업무 시나리오를 포함한 DR 리허설</td></tr></table>
+<div class="note"><strong>가상 예시:</strong> 업무가 RPO 15분, RTO 2시간을 요구한다면 백업 주기만 15분으로 정해서는 부족하다. 백업 정합성·로그 적용·DNS 전환·업무 검증까지 2시간 이내에 끝나는지 측정해야 한다.</div>
+<p><a href="chapter10-erp-operations.html">다음 → 10장 3부 운영·보안·검증</a></p></section>
+</main></body></html>
