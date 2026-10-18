@@ -1,0 +1,35 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>8장 후반 | 설치 전 인프라 준비</title><style>body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.8 system-ui,"Malgun Gothic",sans-serif}header{background:#0f172a;color:white;padding:35px max(18px,calc((100vw - 950px)/2))}a{color:#1d4ed8}header a{color:#bfdbfe}main{max-width:950px;margin:auto;padding:20px}section{background:white;padding:25px;margin:18px 0;border:1px solid #dbe3ef;border-radius:14px}h2{color:#1e3a8a}table{border-collapse:collapse;width:100%}td,th{border:1px solid #dbe3ef;padding:10px;text-align:left;vertical-align:top}th{background:#eff6ff}.note{background:#eef2ff;border-left:4px solid #2563eb;padding:12px}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:12px}@media(max-width:680px){table{display:block;overflow-x:auto}}</style></head><body>
+<header><a href="chapter08-preparation.html">← 8장 전반</a> · <a href="index.html">장별 목차</a><h1>8장. 설치 전 인프라 준비 (후반)</h1><p>8.7~8.11: DB·스토리지·백업, Kubernetes, 검증 증거, 설치 승인과 체크리스트</p></header><main>
+<section id="s87"><h2>8.7 DB·스토리지·백업·복구</h2><p>DB 프로세스가 실행된다고 설치 준비가 끝난 것은 아니다. 데이터·로그·임시 영역의 성능과 복구 가능성까지 확인한다.</p>
+<table><tr><th>영역</th><th>확인할 질문</th><th>증거</th></tr>
+<tr><td>호환성</td><td>DB 엔진·버전·패치가 공식 지원 조합인가?</td><td>공급사 검증 매트릭스</td></tr>
+<tr><td>저장공간</td><td>초기 크기, 증가율, 보존 기간, 임시 공간을 계산했는가?</td><td>용량 계획서</td></tr>
+<tr><td>성능</td><td>업무 피크의 IOPS, 처리량, 지연을 검증했는가?</td><td>성능 시험 결과</td></tr>
+<tr><td>백업</td><td>정합성·보존·암호화·오프사이트 보관 정책이 있는가?</td><td>백업 정책과 로그</td></tr>
+<tr><td>복구</td><td>복원 시험으로 RPO/RTO 충족을 확인했는가?</td><td>복구 시험 기록</td></tr></table>
+<div class="note">RPO는 허용 데이터 손실 시점의 목표, RTO는 복구 완료까지 허용되는 시간 목표다. 백업 성공과 복구 성공은 다르다.</div></section>
+<section id="s88"><h2>8.8 Kubernetes 기반 UC 사전점검</h2><p>실제 UC 배포 모델이 Kubernetes일 때 추가로 확인한다. 공식 제품별 요구사항을 우선한다.</p>
+<table><tr><th>항목</th><th>확인 내용</th></tr>
+<tr><td>노드·가용성</td><td>장애 영역, Worker 자원, 노드 1대 장애 시 잔여 수용량</td></tr>
+<tr><td>스케줄링</td><td>Pod requests/limits, 배치 정책, 유지보수 중 가용성</td></tr>
+<tr><td>영속 데이터</td><td>PVC, StorageClass, 접근 모드, 복원 절차</td></tr>
+<tr><td>네트워크</td><td>Service, Ingress, 내부 DNS, 외부 연계</td></tr>
+<tr><td>보안</td><td>RBAC, Secret 보호, 이미지 검증, 네트워크 분리</td></tr>
+<tr><td>운영</td><td>지표·로그·경보, 버전 호환성, 업그레이드·롤백</td></tr></table>
+<p>노드의 물리 RAM 전체를 Pod에 할당할 수 없다. OS·시스템 예약, DaemonSet, 장애 여유를 제외해 계산한다.</p></section>
+<section id="s89"><h2>8.9 점검 결과는 증거로 남긴다</h2><p>OS 버전, 시간 동기화, 파일시스템 여유, DNS 응답, TLS 체인, 서비스 연결, 클러스터 상태를 읽기 전용 방법으로 확인한다. 결과는 시각·담당자·판정 기준과 함께 기록한다.</p>
+<div class="warn">공개 GitHub에는 실제 IP, 내부 호스트명, 인증정보, 운영 로그 원본, 비공개 구성도와 고객 식별 정보를 올리지 않는다.</div></section>
+<section id="s810"><h2>8.10 설치 승인 게이트</h2><table><tr><th>판정</th><th>기준</th><th>조치</th></tr>
+<tr><td>Go</td><td>지원 사양, 연결성, 보안, 복구, 담당자와 시험 계획이 검증됨</td><td>설치 승인</td></tr>
+<tr><td>Conditional Go</td><td>경미한 잔여 이슈에 임시 통제·기한·책임자 합의</td><td>조건부 승인 기록</td></tr>
+<tr><td>No-Go</td><td>지원 미확인, 필수 연결 실패, 복구 불가, 보안 승인 부재</td><td>설치 보류 후 재점검</td></tr></table>
+<p>데이터 손실·보안 사고·핵심 업무 중단으로 이어질 수 있는 이슈는 단순한 조건부 승인으로 넘기지 않는다.</p></section>
+<section id="s811"><h2>8.11 현장용 사전점검 체크리스트</h2><table><tr><th>항목</th><th>완료 기준</th></tr>
+<tr><td>□ 범위와 R&amp;R</td><td>서비스 범위, 담당자, 에스컬레이션 확정</td></tr>
+<tr><td>□ 공식 호환성</td><td>OS·DB·WAS·클러스터 검증 조합 확인</td></tr>
+<tr><td>□ 용량과 장애 여유</td><td>CPU·RAM·디스크·N+1 가정 검토</td></tr>
+<tr><td>□ 네트워크·인증서</td><td>DNS·시간·TLS·최소 허용 경로 시험</td></tr>
+<tr><td>□ 백업·복구</td><td>복원 시험 계획, RPO/RTO, 책임자 확정</td></tr>
+<tr><td>□ 관측성과 변경관리</td><td>모니터링, 변경 승인, 원복 기준 확보</td></tr></table>
+<p class="note">본 장은 독립 교육 자료이며 공식 OmniEsol 설치 요구사항을 대체하지 않는다.</p><p><a href="chapter09-os-network-storage.html">다음: 9장 OS·Network·Storage →</a></p></section>
+</main></body></html>
