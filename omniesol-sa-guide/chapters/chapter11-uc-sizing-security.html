@@ -1,0 +1,12 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>11장 3부 | UC 용량과 보안</title><style>body{max-width:920px;margin:auto;padding:22px;font:16px/1.8 system-ui,"Malgun Gothic",sans-serif;color:#1e293b;background:#f8fafc}article{background:white;padding:25px;border-radius:14px}h1,h2{color:#1e3a8a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cbd5e1;padding:9px;text-align:left;vertical-align:top}th{background:#eff6ff}pre{background:#0f172a;color:white;padding:16px;overflow-x:auto}a{color:#1d4ed8}</style></head><body><article><a href="chapter11-uc-availability.html">← 11장 2부</a><h1>11장 3부. 용량 산정과 보안</h1>
+<h2>11.7 UC 용량 산정과 확장</h2><p>등록 사용자 수만으로 Pod 수를 정하지 않는다. 동시 API 요청, 실시간 연결, 파일 전송량, 알림 이벤트, 데이터베이스 처리량을 분리해 측정한다.</p>
+<table><tr><th>계층</th><th>핵심 지표</th><th>확장 판단</th></tr><tr><td>Web/API</td><td>p95 응답시간, RPS, CPU 사용·제한, 메모리</td><td>수평 확장과 요청당 자원 비용 검증</td></tr><tr><td>실시간 통신</td><td>동시 연결, 재연결 수, 이벤트 지연</td><td>세션 유지·연결 분산 정책 확인</td></tr><tr><td>DB/캐시</td><td>쿼리 지연, 연결 수, IOPS</td><td>애플리케이션 증설 후 병목 재측정</td></tr><tr><td>스토리지</td><td>처리량, 지연, 용량, 복구 부하</td><td>피크 파일 업로드·복원 시험</td></tr></table>
+<p><strong>가상 N+1 계산:</strong> Worker Node 3대, 각 Node의 Allocatable 자원이 8 vCPU/24 GiB라면 노드 1대 장애 후 잔여 용량은 16 vCPU/48 GiB다. 시스템 워크로드와 애플리케이션의 자원 요청 합계가 이 범위 안에서 실제로 재배치 가능한지 검증한다. 이는 제품 공식 권장 사양이 아니다.</p>
+<pre>정상: 3 × 8 vCPU = 24 vCPU
+장애 후: 2 × 8 vCPU = 16 vCPU
+정상 메모리: 72 GiB → 장애 후 48 GiB
+추가 검증: 배치 제약, 영속 볼륨 접근, CPU 제한, DB 처리량</pre>
+<table><tr><th>확장 방식</th><th>장점</th><th>한계</th></tr><tr><td>Pod 수평 확장</td><td>무상태 처리량 확장</td><td>DB·세션 병목을 해결하지 못함</td></tr><tr><td>Node 증설</td><td>배치 공간과 장애 여유 확보</td><td>비용·운영 복잡도 증가</td></tr><tr><td>Pod 자원 상향</td><td>단일 프로세스 병목에 간단</td><td>노드 종속성 증가</td></tr></table>
+<h2>11.8 보안과 운영 경계</h2><table><tr><th>항목</th><th>점검 기준</th></tr><tr><td>관리 접근</td><td>관리 API를 일반 사용자 접속망과 분리하고 역할별 최소 권한 부여</td></tr><tr><td>워크로드</td><td>불필요한 높은 권한·호스트 접근 제한, 지원 범위 확인</td></tr><tr><td>네트워크</td><td>워크로드 간 통신 허용 범위 문서화, 정책 적용 후 기능 시험</td></tr><tr><td>이미지</td><td>신뢰 출처, 지원 버전, 취약점 점검, 패치 주기 관리</td></tr><tr><td>민감 정보</td><td>설정 저장소와 운영 로그에 비밀번호 등 노출 방지</td></tr><tr><td>확장성</td><td>신규 Pod·Node에도 접근 정책과 모니터링 자동 적용</td></tr></table>
+<p>보안 강화로 DNS·DB·모니터링 연결이 끊어질 수 있으므로 변경 승인, 영향 시험, 롤백 절차를 마련한다. 운영과 보안은 서비스 확장 이후에도 유지되어야 한다.</p>
+<p><a href="chapter11-uc-operations.html">다음 → 11장 4부 운영·장애 대응</a></p></article></body></html>
