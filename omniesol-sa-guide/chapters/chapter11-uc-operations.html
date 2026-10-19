@@ -1,0 +1,24 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>11장 4부 | UC 운영과 장애 대응</title><style>body{max-width:920px;margin:auto;padding:22px;font:16px/1.8 system-ui,"Malgun Gothic",sans-serif;color:#1e293b;background:#f8fafc}article{background:white;padding:25px;border-radius:14px}h1,h2{color:#1e3a8a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cbd5e1;padding:9px;text-align:left;vertical-align:top}th{background:#eff6ff}pre{background:#0f172a;color:#e2e8f0;padding:16px;overflow-x:auto}a{color:#1d4ed8}</style></head><body><article><a href="chapter11-uc-sizing-security.html">← 11장 3부</a><h1>11장 4부. 운영·장애 분석·인수인계</h1>
+<h2>11.9 관측성과 운영 기준</h2><p>클러스터 상태만으로 사용자 체감 품질을 설명할 수 없다. 브라우저부터 Ingress, Service, Pod, DB와 스토리지까지 동일 시간대의 지표를 비교한다.</p>
+<table><tr><th>계층</th><th>관측 지표</th><th>판단 질문</th></tr><tr><td>브라우저</td><td>화면 로딩, 인증 실패, 실시간 연결 오류</td><td>특정 사용자·네트워크 문제인가?</td></tr><tr><td>Ingress</td><td>4xx/5xx, p95, 업스트림 연결</td><td>라우팅 또는 타임아웃 문제인가?</td></tr><tr><td>Pod</td><td>Restart, Readiness, OOM, CPU 제한</td><td>앱 또는 자원 문제인가?</td></tr><tr><td>Node</td><td>Ready, 자원 압박, 디스크, 네트워크</td><td>특정 노드에 집중되는가?</td></tr><tr><td>DB/Storage</td><td>쿼리 지연, I/O, 연결 수, 오류</td><td>확장으로 해결되지 않는 병목인가?</td></tr></table>
+<h2>11.10 가상 장애 사례</h2>
+<p><strong>사례 A — 로그인 후 UC 메뉴가 비어 있음:</strong> 실패한 브라우저 요청의 URL과 상태코드를 확인하고, 내부·외부 도메인 응답, 인증 경로, 프레임 허용 정책을 대조한다. 로그인 화면 표시만으로 전체 정상 판정을 하지 않는다.</p>
+<p><strong>사례 B — Pod는 Running인데 503:</strong> Service selector, EndpointSlice, readiness, 포트 설정, Ingress 경로를 확인한다. Pod 실행 상태와 요청 수신 가능 상태는 다르다.</p>
+<p><strong>사례 C — 노드 장애 이후 응답 지연:</strong> Pod 재배치 실패, 자원 요청량, 볼륨 접근 제약, 실시간 연결 재수립 부하와 DB 연결 대기를 구분한다. 복구 후 N+1 시험을 반복한다.</p>
+<h2>11.11 운영 점검 명령어 예시</h2><p>아래 명령은 일반적인 읽기 전용 점검 예시다. 실제 운영 권한을 확인하고 결과에 포함된 민감 정보를 공개하지 않는다.</p>
+<pre>kubectl get nodes -o wide
+kubectl get pods -n &lt;namespace&gt; -o wide
+kubectl get deploy,sts,svc,ingress -n &lt;namespace&gt;
+kubectl get endpointslices -n &lt;namespace&gt;
+kubectl get pvc -n &lt;namespace&gt;
+kubectl get hpa,pdb -n &lt;namespace&gt;
+kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt;
+kubectl get events -n &lt;namespace&gt; --sort-by=.lastTimestamp
+kubectl top nodes
+kubectl top pods -n &lt;namespace&gt;</pre>
+<p>Pending은 스케줄링·자원·볼륨, CrashLoopBackOff는 종료 원인·설정·Probe, 503은 준비된 Endpoint와 라우팅, 느린 응답은 API·DB·스토리지 지연을 우선 확인한다.</p>
+<h2>11.12 설치·운영 인수인계 (Go/No-Go)</h2>
+<table><tr><th>영역</th><th>필수 증적</th><th>판정</th></tr><tr><td>지원 조합</td><td>제품·K8s·네트워크·스토리지 지원 버전 확인</td><td>□ Go □ No-Go</td></tr><tr><td>접속</td><td>내·외부 접속, 로그인, 파일, 실시간 기능 시험</td><td>□ Go □ No-Go</td></tr><tr><td>용량</td><td>피크 부하, 노드 장애 후 재배치·성능 시험</td><td>□ Go □ No-Go</td></tr><tr><td>복구</td><td>DB·파일 복원, RPO/RTO 측정 결과</td><td>□ Go □ No-Go</td></tr><tr><td>보안</td><td>접근 권한, 네트워크 정책, 패치·로그 점검</td><td>□ Go □ No-Go</td></tr><tr><td>운영</td><td>모니터링, 연락망, 변경·롤백 절차</td><td>□ Go □ No-Go</td></tr></table>
+<p>중요 항목이 No-Go이면 위험 수용자, 영향, 임시 조치, 해소 기한을 문서화한다. 검증하지 않은 가용성과 복구 목표를 달성했다고 표기하지 않는다.</p>
+<p>본 장은 공개 교육용 참조 설계이며 제품 공식 사양을 대체하지 않는다. <strong>다음 장은 12장 통합형 Kubernetes 아키텍처</strong>다.</p>
+<p><a href="index.html">장별 목차</a> · <a href="../index.html">책 소개</a></p></article></body></html>
