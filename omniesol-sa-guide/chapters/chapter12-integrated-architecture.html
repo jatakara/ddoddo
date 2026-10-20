@@ -1,0 +1,31 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>12장 1부 | 통합형 Kubernetes 아키텍처</title>
+<style>body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.75 system-ui,"Malgun Gothic",sans-serif}header{background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:35px max(20px,calc((100vw - 960px)/2))}header a{color:#bfdbfe}main{max-width:960px;margin:auto;padding:20px}section{background:white;border:1px solid #dbe3ef;border-radius:14px;padding:26px;margin:18px 0}h2{color:#1e3a8a}h3{color:#0f766e}a{color:#1d4ed8}table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid #dbe3ef;padding:10px;text-align:left;vertical-align:top}th{background:#eff6ff}pre{overflow:auto;background:#0f172a;color:#e2e8f0;padding:18px;border-radius:10px;font:13px/1.6 monospace}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:14px}.note{background:#eff6ff;border-left:4px solid #2563eb;padding:14px}@media(max-width:700px){section{padding:18px}table{display:block;overflow:auto}}</style></head><body>
+<header><a href="index.html">← 장별 목차</a><h1>12장 1부. 통합형 Kubernetes 아키텍처</h1><p>12.1~12.4 · 공유 경계, 참조 구조, 선택 기준, 자원 경합</p></header><main>
+<section><h2>이 장의 전제</h2><p>통합형은 ERP와 UC가 일부 인프라 자원 또는 운영 플랫폼을 공유하는 구성이다. 공유 물리 서버, 공유 Kubernetes 클러스터, ERP VM과 UC Kubernetes의 공통 가상화 기반은 서로 다른 설계다. 모두를 ‘ERP와 UC가 K8s에 올라간다’고 표현하면 배포 범위와 장애 책임을 잘못 이해하게 된다.</p>
+<p class="warn"><strong>공식 제품 사양과 구분:</strong> 이 장은 일반적인 참조 아키텍처다. ERP 컨테이너화 가능 여부, UC 필수 컴포넌트, 지원 OS·Kubernetes·DB·CNI·CSI·라이선스는 해당 OmniEsol 릴리스의 공식 자료와 공급사 승인을 우선한다.</p></section>
+<section><h2>12.1 무엇을 공유하는가?</h2><table><tr><th>모델</th><th>공유 자원</th><th>대표 리스크</th></tr><tr><td>A. 인프라 공유형</td><td>물리 서버, 가상화, 스토리지</td><td>ERP가 VM에 있어도 호스트·SAN 장애는 UC에 전파될 수 있음</td></tr><tr><td>B. 클러스터 공유형</td><td>Control Plane, Worker, CNI/CSI, Ingress</td><td>Namespace 분리만으로 공통 장애를 제거하지 못함</td></tr><tr><td>C. 하이브리드형</td><td>일부 네트워크·인증·관측·운영 체계</td><td>DB·AP·UC 실행 위치와 책임 경계가 모호해지기 쉬움</td></tr></table>
+<p>SA는 설계도에 ERP 실행 위치, UC 실행 위치, DB 위치, 공통 기반, 장애 도메인, 관리 주체를 각각 기록한다. 공유 영역을 숨긴 채 ‘논리 분리’만 강조하는 것은 기술적 부채다.</p></section>
+<section><h2>12.2 논리 참조 구성도</h2><pre>         [Browser / Mobile / Integration]
+                      │ HTTPS
+               [DNS / WAF / LB]
+                      │
+             [Ingress / Gateway]
+                ┌─────┴─────┐
+                │           │
+         [ERP Service] [UC Service]
+          [ERP Pods]*   [UC Pods]
+                │           │
+            [ERP DB]*   [UC Data]
+                └─────┬─────┘
+              [공유 K8s 기반]
+     [Control Plane / Worker / CNI / CSI]
+         [Monitoring / Logging / Backup]
+
+* ERP Pods·DB는 제품 지원 범위에 따라
+  VM 또는 별도 서버로 대체될 수 있다.</pre>
+<p>DNS, Ingress, 스토리지, 인증 서비스가 공통 단일 장애 지점이면 ERP·UC가 동시에 영향을 받는다. Control Plane의 HA만으로 애플리케이션 무중단을 보장할 수 없다.</p><p class="note"><strong>핵심 질문:</strong> UC 부하 급증, Worker 한 대 장애, 공통 인증 장애 상황에서도 ERP 핵심 업무의 응답시간과 오류율 목표를 만족하는가?</p></section>
+<section><h2>12.3 통합형 vs 분리형: 트레이드오프</h2><table><tr><th>항목</th><th>통합형</th><th>분리형</th></tr><tr><td>비용</td><td>공유로 초기 투자 절감 가능, HA 여유는 별도 필요</td><td>중복 투자 증가, 서비스별 비용 귀속 명확</td></tr><tr><td>운영</td><td>배포·관측 표준화 용이, 플랫폼 전문성 필요</td><td>업무별 독립 운영 가능, 관리 포인트 증가</td></tr><tr><td>성능</td><td>CPU·메모리·I/O 경합 관리 필요</td><td>자원 예측성 향상, 과잉 프로비저닝 가능</td></tr><tr><td>가용성</td><td>공통 실패 도메인 존재</td><td>독립 장애 격리 용이, 공유 DNS/SSO는 예외</td></tr><tr><td>보안</td><td>논리 격리 증빙 필요</td><td>강한 운영·네트워크 분리 설계 용이</td></tr><tr><td>확장</td><td>워크로드별 HPA 가능, 노드·DB 병목 검토</td><td>서비스별 독립 증설 가능, 비용 증가</td></tr></table>
+<p>통합형이 항상 저렴하거나 확장성이 낮은 것은 아니다. 총소유비용(TCO), 피크 부하의 상관관계, 장애 영향, 규제 요건을 함께 검토한다.</p></section>
+<section><h2>12.4 CPU·메모리·I/O 자원 경합</h2><table><tr><th>자원</th><th>증상</th><th>대응 원칙</th></tr><tr><td>CPU</td><td>ERP p99 상승, throttling</td><td>requests 실측, limits 재검토, 노드 풀 분리</td></tr><tr><td>메모리</td><td>OOMKilled, MemoryPressure</td><td>Heap/RSS/OS 예약량 구분</td></tr><tr><td>스토리지</td><td>DB commit 지연, 파일 처리 정체</td><td>IOPS·Latency 계측, 데이터 경로 분리</td></tr><tr><td>네트워크</td><td>504, 연결 끊김</td><td>LB·Ingress·CNI·DNS 구간별 확인</td></tr></table>
+<p>스케줄러는 주로 Pod의 <code>requests</code>를 기준으로 배치한다. <code>ResourceQuota</code>는 Namespace 총량, <code>LimitRange</code>는 개별 리소스 범위·기본값을 관리한다. 둘 다 모든 런타임 간섭을 제거하지는 못한다. DB는 제품 지원 범위 내에서 전용 자원을 검토한다.</p>
+<p><a href="chapter12-integrated-capacity.html">다음 → 12장 2부: 용량·스케줄링·장애 격리</a></p></section></main></body></html>
