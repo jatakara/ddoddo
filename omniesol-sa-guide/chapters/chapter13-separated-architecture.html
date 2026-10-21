@@ -1,0 +1,21 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>13장 1부 | ERP·UC 분리형 아키텍처</title><style>body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.75 system-ui,"Malgun Gothic",sans-serif}header{background:#1e3a8a;color:white;padding:30px}main{max-width:920px;margin:auto;padding:20px}section{background:white;border:1px solid #dbe3ef;border-radius:12px;padding:24px;margin:16px 0}h2{color:#1e3a8a}table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid #cbd5e1;padding:9px;text-align:left;vertical-align:top}th{background:#eff6ff}pre{background:#0f172a;color:#e2e8f0;padding:18px;overflow:auto}a{color:#2563eb}.note{background:#eff6ff;padding:14px;border-left:4px solid #2563eb}@media(max-width:700px){section{padding:16px}table{display:block;overflow:auto}}</style></head><body><header><h1>13장 1부. ERP·UC 분리형 아키텍처</h1><p>13.1~13.4 | 분리 수준·장애 도메인·참조 토폴로지·선택 기준</p></header><main>
+<section><h2>이 장의 목적</h2><p>ERP와 UC를 서로 다른 실행·운영 영역에 배치할 때 실제로 무엇을 분리해야 위험이 줄어드는지 설명한다. 이 장은 공개 교육용 참조 설계이며 공식 OmniEsol 제품 설치 규격이 아니다. 지원 OS·DB·WEB/WAS·Kubernetes·HA 방식과 라이선스는 해당 릴리스의 공식 지원 자료로 확인해야 한다.</p><p class="note">핵심 질문: UC에 장애가 발생했을 때 ERP가 계속 동작하는가? 두 서비스가 공통 DNS·SSO·스토리지에 의존한다면 그 위험을 어떻게 관리하는가?</p></section>
+<section><h2>13.1 분리형의 정의</h2><p>분리형은 ERP와 UC가 독립적인 용량 계획, 보안 경계, 변경 주기, 장애 복구 목표를 갖도록 설계하는 모델이다. 물리 서버가 달라도 같은 가상화 호스트, SAN, 관리 계정, 네트워크 경로를 사용한다면 공통 장애가 남는다.</p><table><tr><th>분리 수준</th><th>분리 대상</th><th>잔여 위험</th><th>확인 자료</th></tr><tr><td>논리</td><td>VM, Namespace, DB 계정</td><td>동일 호스트·클러스터 장애</td><td>자원 맵, 접근 정책</td></tr><tr><td>컴퓨트</td><td>전용 호스트·노드 풀</td><td>공유 스토리지·네트워크</td><td>호스트·랙 매핑</td></tr><tr><td>데이터</td><td>ERP DB, UC DB, 백업</td><td>공통 백업 관리·암호화 키</td><td>데이터 흐름도, 복원 기록</td></tr><tr><td>운영</td><td>배포 권한, 변경 창, 대응 책임</td><td>공통 IAM·모니터링</td><td>RACI, 변경 기록</td></tr><tr><td>물리</td><td>랙·전원·스위치·스토리지</td><td>건물·회선·DNS·SSO</td><td>장애 도메인 목록</td></tr></table><p>분리 강도는 업무 중요도와 비용을 함께 평가해 결정한다. ‘분리형’이라는 명칭만으로 무중단이 보장되지는 않는다.</p></section>
+<section><h2>13.2 참조 구성과 요청 경로</h2><pre>       [내부 사용자 / 외부 사용자 / 모바일]
+                      |
+                 [DNS / WAF]
+                      |
+                [접속 LB]
+               /          \
+         [ERP WEB]      [UC Ingress]
+              |               |
+         [ERP WAS]        [UC 서비스]
+              |               |
+         [ERP DB]         [UC DB/파일]
+              |               |
+         [ERP 백업]       [UC 백업]
+
+    공통 의존성: DNS / SSO / 인증서 / NTP
+                네트워크 / 운영 계정 / 관측 체계</pre><p>접속 계층을 공유할 수도 있지만 공통 LB·WAF는 장애 전파 지점이다. ERP의 짧은 업무 트랜잭션과 UC의 장기 연결·실시간 서비스는 타임아웃, 버퍼링, 보안 정책을 별도로 검증해야 한다. 관리망·백업망·스토리지망은 운영 도면에서 추가로 표시한다.</p></section>
+<section><h2>13.3 장애 도메인과 격리 검증</h2><table><tr><th>사건</th><th>기대 결과</th><th>주의할 공통 의존성</th></tr><tr><td>UC Worker 장애</td><td>ERP 업무 지속, UC 복구</td><td>공유 호스트·LB·스토리지</td></tr><tr><td>ERP DB 성능 저하</td><td>UC 메시지·로그인 정상</td><td>공통 SAN·인증 저장소</td></tr><tr><td>WAF 정책 오류</td><td>영향 경로만 차단·원복</td><td>공통 프록시·정책 배포</td></tr><tr><td>공통 DNS 장애</td><td>영향 범위와 복구 시간 예측</td><td>내부/외부 리졸버</td></tr><tr><td>백업 시스템 장애</td><td>각 서비스 데이터 보호 지속</td><td>공통 관리 계정·백업 저장소</td></tr></table><p>서버 수보다 실패 도메인의 독립성이 중요하다. 노드 이중화는 공통 DNS, 인증, 전원 장애를 해결하지 못한다. 장애 주입 시험은 승인된 비운영 환경에서 수행한다.</p></section>
+<section><h2>13.4 통합형과 분리형의 트레이드오프</h2><table><tr><th>기준</th><th>통합형</th><th>분리형</th></tr><tr><td>초기 비용</td><td>자원 공유로 절감 가능</td><td>장비·운영 비용 증가</td></tr><tr><td>장애 격리</td><td>공통 플랫폼 위험 관리 필요</td><td>독립 장애 영역 구성에 유리</td></tr><tr><td>확장성</td><td>공유 여유를 탄력적으로 사용</td><td>서비스별 독립 증설 용이</td></tr><tr><td>보안</td><td>논리 격리 증빙 필요</td><td>강한 정책·권한 경계에 유리</td></tr><tr><td>운영 복잡성</td><td>플랫폼 전문성 집중</td><td>관리 대상과 변경 절차 증가</td></tr></table><p>업무별 SLO, RPO/RTO, 규제 요건, 피크 부하 상관관계, 총소유비용을 비교한다. 분리형의 가치는 장비 수가 아니라 서비스별로 통제 가능한 실패 범위에 있다.</p><p><a href="chapter13-separated-connectivity.html">다음: 2부 네트워크·보안·운영 책임 →</a> · <a href="index.html">장별 목차</a></p></section></main></body></html>
