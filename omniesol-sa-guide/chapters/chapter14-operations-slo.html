@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14장 1부 | 운영 점검 체계와 서비스별 SLO · OmniEsol SA 실전 가이드</title>
+<meta name="description" content="OmniEsol SA 실전 가이드 14장: 운영 기준선, ERP·UC SLI/SLO, 오류 예산, 계측, 대시보드, 경보 설계">
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.8 system-ui,-apple-system,"Malgun Gothic",sans-serif}header{background:linear-gradient(115deg,#172554,#155e75);color:#fff;padding:38px max(22px,calc((100% - 960px)/2))}header p{color:#dbeafe}main{max-width:960px;margin:auto;padding:20px}section{background:#fff;border:1px solid #dbe3ef;border-radius:14px;padding:28px;margin:18px 0}h1{line-height:1.3;margin:0}h2{color:#1e3a8a;margin:0 0 12px}h3{color:#334155;margin-top:22px}a{color:#1d4ed8}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}th,td{border:1px solid #cbd5e1;padding:10px;vertical-align:top;text-align:left}th{background:#eff6ff}pre{background:#0f172a;color:#e2e8f0;padding:17px;border-radius:10px;white-space:pre;overflow:auto;font-size:13px;line-height:1.6}.note{background:#eff6ff;border-left:4px solid #2563eb;padding:14px}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:14px}.muted{color:#64748b}nav{margin:18px 0}nav a{margin-right:16px}@media(max-width:650px){section{padding:18px}table{display:block;overflow-x:auto}header{padding:26px 18px}}</style></head>
+<body><header><p>OmniEsol SA 실전 가이드 · Part II 운영</p><h1>14장 1부. 운영 점검 체계와 서비스별 SLO</h1><p>14.1–14.6 · 운영 대상 정의 → 사용자 경험 계측 → SLO → 오류 예산 → 대시보드 → 경보</p></header>
+<main><nav><a href="index.html">장별 목차</a><a href="chapter13-separated-operations.html">← 13장</a><a href="chapter14-operations-runbook.html">14장 2부 →</a></nav>
+<section><h2>이 장에서 배울 것</h2><p>시스템 운영은 서버가 켜져 있는지를 확인하는 업무가 아니다. 사용자가 핵심 업무를 정상적으로 끝낼 수 있는지 증명하고, 이상 징후를 장애로 확대되기 전에 통제하는 활동이다. ERP와 UC는 같은 인프라 지표를 공유할 수 있지만 <strong>성공의 정의와 허용 지연이 다르므로 서비스별 운영 기준을 별도로 수립</strong>해야 한다.</p><p class="note"><strong>자료 성격:</strong> 아래 SLO 목표치, 경보 수치, 운영 빈도는 교육용 예시이며 OmniEsol 제조사 공식 권장값이나 고객 계약 SLA가 아니다. 계약·지원 버전·고객 업무 중요도·실측 기준선에 따라 확정한다.</p></section>
+<section><h2>14.1 운영 대상과 책임 경계 정의</h2><p>운영을 시작하기 전 ERP/UC/공통 인프라의 서비스 카탈로그와 의존성 지도를 작성한다. 각 구성 요소의 담당 조직, 계정 권한, 패치 주체, 장애 연락처, 데이터 보존 책임을 기록한다. 서비스 책임이 불명확하면 알람은 발생해도 조치는 지연된다.</p>
+<pre>사용자/모바일
+   │
+DNS · TLS · WAF · Reverse Proxy / LB  ← 공통 접속 계층
+   ├── ERP WEB → ERP WAS → ERP DB → 배치/파일
+   └── UC Ingress → UC API/Pod → UC 데이터/파일/메시징
+          └── 인증·SSO·외부 연계
+   ↓
+관측 계층: 합성 사용자 테스트 + 요청 지표 + 로그 + 트레이스 + DB/OS/K8s
+   ↓
+운영 절차: 감지 → 분류 → 복구 → 검증 → 사후 분석</pre>
+<table><tr><th>운영 대상</th><th>대표 점검 항목</th><th>판정 주체</th></tr>
+<tr><td>ERP 업무</td><td>로그인, 메뉴, 조회·저장, 마감 배치, DB 지연</td><td>업무 책임자 + ERP 운영</td></tr>
+<tr><td>UC 업무</td><td>로그인, 메뉴, API, 실시간 연결, 메시지/첨부, Pod 상태</td><td>UC 운영 + 플랫폼 운영</td></tr>
+<tr><td>공통 계층</td><td>DNS, 인증서, WAF/LB, SSO, 백업, 네트워크</td><td>인프라/보안 담당</td></tr>
+<tr><td>관측 시스템</td><td>수집 공백, 알람 전달 실패, 시간 동기화, 보존 정책</td><td>모니터링 담당</td></tr></table>
+<p><strong>설계상 위험:</strong> ERP와 UC가 서로 다른 서버를 사용하더라도 공통 DNS·SSO·WAF가 단일 장애점이면 두 서비스가 동시에 중단될 수 있다. 서비스별 SLO뿐 아니라 공통 의존성의 장애 영향 범위도 관리한다.</p></section>
+<section><h2>14.2 SLI, SLO, SLA의 차이</h2><p><strong>SLI</strong>(Service Level Indicator)는 관측 지표, <strong>SLO</strong>(Service Level Objective)는 목표치, <strong>SLA</strong>(Service Level Agreement)는 고객과 합의한 서비스 계약 조건이다. SLO는 서비스 품질을 운영하는 내부 기준이고, SLA와 자동으로 동일하지 않다.</p>
+<table><tr><th>사용자 여정</th><th>SLI 측정 예시</th><th>SLO 예시(30일 롤링)</th><th>주의점</th></tr>
+<tr><td>ERP 로그인</td><td>유효 로그인 시도 중 정상 인증 및 화면 진입 비율</td><td>성공률 ≥ 99.9%</td><td>잘못된 암호 등 사용자 오류는 별도 분류</td></tr>
+<tr><td>ERP 조회/저장</td><td>서버측 유효 요청 중 정상 완료 및 지연 목표 충족 비율</td><td>정상 완료 ≥ 99.9%, p95 ≤ 2초</td><td>업무 종류별 분리; 대량 배치는 별도 SLI</td></tr>
+<tr><td>UC 핵심 API</td><td>유효 API 요청 중 5xx/타임아웃 없는 비율</td><td>성공률 ≥ 99.9%</td><td>4xx 전체를 서버 실패로 취급하지 않음</td></tr>
+<tr><td>UC 실시간 기능</td><td>연결 수립 성공률 및 연결 유지/재연결 지표</td><td>연결 수립 성공 ≥ 99.5%</td><td>WebSocket/SSE는 일반 HTTP 완료율만으로 판단 불가</td></tr>
+<tr><td>ERP 배치</td><td>정해진 완료 시각 전 정상 종료한 배치 비율</td><td>기한 내 완료 ≥ 99%</td><td>저빈도 배치는 성공률보다 미완료 즉시 통보가 적합</td></tr></table>
+<p>유효 요청의 범위, 측정 지점, 제외 조건, 유지보수 처리, 집계 시간대, 데이터 결측 처리 규칙을 SLO 문서에 함께 적는다. 예를 들어 <code>HTTP 200</code>이어도 로그인 화면으로 강제 리다이렉트되거나 업무 저장이 실패했다면 사용자 관점에서 성공이 아닐 수 있다.</p>
+<h3>가용성 지표와 오류 예산</h3>
+<pre>요청 기반 성공률 = 성공한 유효 요청 수 / 전체 유효 요청 수 × 100
+오류 예산(요청 수) = 전체 유효 요청 수 × (1 - SLO 목표 비율)
+예: 30일간 유효 요청 1,000,000건, SLO 99.9%
+    허용 실패 = 1,000건
+    실제 실패 = 350건 → 오류 예산 35% 사용, 65% 잔여
+
+시간 기반 99.9% 가용성(30일 = 43,200분):
+    허용 비가용 시간 = 43.2분
+※ 시간 기반 예산과 요청 기반 예산은 서로 다른 모델이며 혼용하지 않는다.</pre>
+<p class="warn">낮은 트래픽의 관리 기능은 요청 1건만 실패해도 성공률이 크게 출렁인다. 합성 트랜잭션이나 이벤트 단위 관측을 병행하고, 표본 부족 시 목표 미달 판정 방식을 명시한다.</p></section>
+<section><h2>14.3 ERP·UC 관측 데이터 설계</h2><p>운영 대시보드는 사용자 관점(Black-box)과 내부 관점(White-box)을 함께 수집한다. <strong>사용자 관점은 장애 존재를, 내부 관점은 장애 원인을 찾는 데 유리</strong>하다.</p>
+<table><tr><th>관측 계층</th><th>수집 예시</th><th>목적</th></tr>
+<tr><td>합성 사용자 테스트</td><td>로그인 → 메뉴 → 테스트 조회(읽기 전용)</td><td>DNS·TLS·인증·화면까지 종단 간 확인</td></tr>
+<tr><td>WEB/Proxy</td><td>상태코드, 요청량, p50/p95/p99, upstream 시간, TLS 오류</td><td>네트워크/프록시/백엔드 구간 분리</td></tr>
+<tr><td>ERP WAS</td><td>스레드 풀, 커넥션 풀, GC pause, 응답시간, 오류율</td><td>애플리케이션 병목</td></tr>
+<tr><td>DB</td><td>활성 세션, 대기 이벤트, Lock, I/O latency, 로그·백업 상태</td><td>데이터 처리 지연 및 무결성</td></tr>
+<tr><td>UC/Kubernetes</td><td>Ready Pod, 재시작, Pending, CPU throttling, OOM, Ingress 5xx</td><td>스케줄링·용량·배포 이상</td></tr>
+<tr><td>OS/Storage</td><td>CPU run queue, 메모리 pressure, swap in/out, 디스크 지연, inode</td><td>리소스 부족 조기 탐지</td></tr>
+<tr><td>비동기 처리</td><td>큐 적체, consumer lag, 처리 지연, 실패/재시도</td><td>지연 누적 및 데이터 유실 위험</td></tr></table>
+<p>지표에는 서비스·환경·컴포넌트·클러스터 같은 안정적인 라벨만 사용한다. 사용자 ID, 이메일, 요청 본문, 세션 토큰, 고객 식별자를 메트릭 라벨에 넣지 않는다. 이는 개인정보 유출뿐 아니라 고카디널리티로 모니터링 시스템의 메모리와 비용을 폭증시킬 수 있다.</p>
+<p>시간 동기화(NTP), 로그 보존 기간, 민감정보 마스킹, 조회 권한, 감사 기록을 운영 설계에 포함한다. 상세 SQL이나 개인정보를 평문으로 장기 보관하지 않는다.</p></section>
+<section><h2>14.4 운영 대시보드 설계</h2><p>한 화면에서 장애 여부를 판정할 수 있도록 <strong>상단에 사용자 영향</strong>, 하단에 원인 분석 지표를 배치한다. ERP와 UC는 분리 표시하고 공통 계층은 별도 패널로 둔다.</p>
+<pre>┌──────────── 서비스 현황 (최근 5분 / 1시간 / 30일) ────────────┐
+│ ERP 성공률 · p95 · 주요 업무 실패 · 오류 예산 잔여          │
+│ UC 성공률 · 연결 성공 · API p95 · 오류 예산 잔여            │
+├──────────── 공통 접속 계층 ─────────────────────────────────┤
+│ DNS/TLS · WAF/LB 5xx · SSO · 합성 사용자 여정              │
+├──────────── 내부 원인 분석 ─────────────────────────────────┤
+│ WEB/WAS/DB 대기 · Kubernetes Ready/OOM · 큐 지연           │
+│ OS CPU/Memory/Swap · Storage Latency · 변경 이력          │
+└────────────────────────────────────────────────────────────┘</pre>
+<p>모든 그래프는 동일한 시간대와 환경을 기준으로 비교한다. 장애 시점에 배포·정책 변경·DB 배치·인증서 갱신 이력을 겹쳐 보여주면 원인 추적 시간을 줄일 수 있다. 평균만 표시하지 말고 p95/p99와 오류율을 함께 표시한다.</p></section>
+<section><h2>14.5 경보는 원인이 아니라 사용자 영향에 우선순위를 둔다</h2><p>모든 CPU 80% 초과를 즉시 호출 경보로 설정하면 알람 피로도가 증가한다. 긴급 호출(Page)은 <strong>사용자에게 영향을 주는 오류율·지연·중요 업무 실패</strong>에 우선 적용하고, 자원 지표는 용량 계획용 Ticket/Warning으로 구분한다. Prometheus 공식 운영 지침도 증상 중심 경보와 실행 가능한 알람을 권장한다.</p>
+<table><tr><th>분류</th><th>예시 조건(교육용)</th><th>조치</th></tr>
+<tr><td>Page / 즉시 대응</td><td>핵심 사용자 여정 연속 실패, SLO 오류 예산 급속 소진, 데이터 무결성 위험</td><td>당직 호출, Incident 개설, 완화 우선</td></tr>
+<tr><td>Ticket / 업무시간 대응</td><td>장기적인 p95 증가, DB 공간 증가 추세, 오류 예산 완만한 소진</td><td>담당자 지정, 기한 내 개선</td></tr>
+<tr><td>Info / 관찰</td><td>일시적 Pod 재시작, 순간 CPU 상승(사용자 영향 없음)</td><td>추세 관찰, 중복 알람 억제</td></tr></table>
+<h3>오류 예산 소진율(Burn Rate)</h3>
+<pre>Burn rate = 관측 실패 비율 / 허용 실패 비율
+SLO 99.9% → 허용 실패 비율 0.001
+최근 실패 비율 0.0144(1.44%)라면 Burn rate = 14.4
+→ 이 상태가 지속되면 오류 예산이 빠르게 소진됨
+※ 실제 알람은 장·단기 관측 창을 함께 사용하고 표본 수를 고려한다.</pre>
+<p>짧은 관측 창은 빠르지만 오탐에 취약하고, 긴 창은 안정적이지만 감지가 늦다. 운영 초기에 2~4주간 기준선을 수집해 경보 임계값과 억제 시간을 보정한다. 핵심 경보마다 담당자·대시보드·Runbook·원복 경로가 반드시 연결되어야 한다.</p></section>
+<section><h2>14.6 운영 체계의 검증 기준</h2>
+<table><tr><th>검증 항목</th><th>Go 기준</th><th>증빙</th></tr>
+<tr><td>핵심 업무 SLI</td><td>ERP·UC 각각 사용자 성공을 판정할 수 있음</td><td>SLI 정의서·샘플</td></tr>
+<tr><td>SLO 합의</td><td>업무·개발·운영·고객 담당자 승인</td><td>SLO 문서·예외 기준</td></tr>
+<tr><td>관측 무결성</td><td>수집 공백·시간 불일치·지표 누락을 탐지</td><td>수집기 상태·시험 기록</td></tr>
+<tr><td>경보 전달</td><td>담당자에게 실제로 전달되고 조치 가능</td><td>모의 장애·연락 시험</td></tr>
+<tr><td>개인정보·접근통제</td><td>로그 마스킹·최소 권한·보존 정책 준수</td><td>보안 점검 기록</td></tr></table>
+<p class="warn"><strong>No-Go:</strong> 핵심 사용자 여정 미계측, 알람 수신자 부재, 백업 실패 미탐지, 비밀정보 로그 노출, 장애 시 운영 권한 부재. 임시 예외는 위험 수용자와 종료 기한을 명시한다.</p>
+<p class="muted">참고: <a href="https://sre.google/workbook/implementing-slos/">Google SRE Workbook — Implementing SLOs</a> · <a href="https://sre.google/workbook/alerting-on-slos/">Alerting on SLOs</a> · <a href="https://prometheus.io/docs/practices/alerting/">Prometheus Alerting</a> · <a href="https://kubernetes.io/docs/concepts/workloads/pods/probes/">Kubernetes Probes</a></p>
+<p><a href="chapter14-operations-runbook.html">계속 읽기: 14장 2부 — 일일·주간·월간 운영, 장애 등급, Runbook →</a></p></section>
+</main></body></html>
