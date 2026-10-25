@@ -1,0 +1,46 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>14장 2부 | 운영 점검·장애 대응 Runbook — OmniEsol SA 실전 가이드</title><meta name="description" content="OmniEsol SA 운영 일일·주간·월간 점검, 장애 등급, 변경관리, 백업·DR, 인수인계"><style>*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.8 system-ui,"Malgun Gothic",sans-serif}header{background:#172554;color:#fff;padding:34px max(20px,calc((100% - 940px)/2))}main{max-width:940px;margin:auto;padding:18px}section{background:#fff;border:1px solid #dbe3ef;border-radius:12px;padding:26px;margin:16px 0}h2{color:#1e3a8a}a{color:#1d4ed8}table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}td,th{border:1px solid #cbd5e1;padding:9px;text-align:left;vertical-align:top}th{background:#eff6ff}pre{background:#0f172a;color:#e2e8f0;padding:17px;border-radius:8px;overflow:auto;font-size:13px}.note{background:#eff6ff;border-left:4px solid #2563eb;padding:14px}.warn{background:#fff7ed;border-left:4px solid #d97706;padding:14px}@media(max-width:700px){section{padding:16px}table{display:block;overflow:auto}}</style></head><body><header><h1>14장 2부. 운영 점검표와 장애 대응 Runbook</h1><p>14.7–14.12 · 점검 주기, 장애 등급, Runbook, 변경·복구·인수인계</p></header><main><nav><a href="chapter14-operations-slo.html">← 14장 1부</a> · <a href="index.html">장별 목차</a> · <a href="chapter15-troubleshooting.html">15장 →</a></nav>
+<section><h2>14.7 일일·주간·월간 점검</h2><p>운영 점검은 체크 여부가 아니라 <strong>기준선, 편차, 조치 증빙</strong>을 남기는 절차다. 계측 공백을 정상으로 취급하지 않는다. 아래 주기는 교육용 예시이며 계약과 업무 중요도에 맞춰 조정한다.</p>
+<table><tr><th>주기</th><th>점검 항목</th><th>판정·증빙</th></tr>
+<tr><td>일일</td><td>ERP 로그인·조회·저장, UC 로그인·메뉴·실시간 기능, 성공률·p95</td><td>사용자 여정 시험, 대시보드 스냅샷</td></tr>
+<tr><td>일일</td><td>DB 백업, 배치, 큐 적체, 디스크 여유, Pod Ready/OOM</td><td>실패 건수·이벤트·추세</td></tr>
+<tr><td>주간</td><td>오류 예산, 인증서 만료, WAF 예외, 계정·권한, 패치 계획</td><td>예외 만료일·담당자·변경 티켓</td></tr>
+<tr><td>월간</td><td>복원 표본 시험, 용량 증가율, 반복 장애 원인</td><td>복원 시간·정합성·개선 계획</td></tr>
+<tr><td>분기/정책 기준</td><td>DR, 노드 장애, 원복 및 비상연락 훈련</td><td>실패 주입 범위·승인·결과</td></tr></table></section>
+<section><h2>14.8 장애 등급과 에스컬레이션</h2><p>장애 등급은 CPU 사용률이 아니라 <strong>업무 영향, 사용자 범위, 데이터 무결성·보안 위험</strong>으로 판정한다. 계약상 기준이 있으면 우선 적용한다.</p>
+<table><tr><th>등급</th><th>대표 상황</th><th>필수 대응</th></tr><tr><td>P1</td><td>핵심 업무 전면 중단, 광역 UC 장애, 데이터 손상 의심</td><td>Incident Commander 지정, 위험 변경 중지, 업무·DB·보안 공동 대응</td></tr><tr><td>P2</td><td>중요 기능 부분 중단, 우회 불가, 영향 확대</td><td>영향 범위 확인, 승인된 원복·우회, 담당 조직 호출</td></tr><tr><td>P3</td><td>제한적 오류, 우회 가능, 경미한 성능 저하</td><td>티켓·재현·계획 조치</td></tr></table><p>장애 발생·탐지·완화·정상화 시각을 분리하고, 확인된 사실과 추정 원인을 별도 기록한다.</p></section>
+<section><h2>14.9 공통 장애 Runbook</h2><pre>1. 감지: 사용자 신고 또는 SLO 경보
+2. 영향: ERP/UC, 내부/외부, 기능·사용자·발생 시각
+3. 변경: DNS·TLS·WAF·Proxy·배포·DB 이력
+4. 완화: 승인된 원복·우회·격리
+5. 진단: DNS → TCP → TLS → Proxy → WAS/Pod → DB/Queue
+6. 검증: 실제 로그인·조회·저장·실시간 기능
+7. 종료: 데이터 정합성·SLO·보안 영향·PIR</pre>
+<table><tr><th>증상</th><th>첫 확인</th><th>오진 방지</th></tr><tr><td>접속 불가</td><td>DNS·TLS·WAF/LB</td><td>DNS 성공이 HTTPS 성공은 아님</td></tr><tr><td>ERP 저장 지연</td><td>WAS Pool·DB Lock/Wait·Storage</td><td>낮은 CPU도 DB 병목 가능</td></tr><tr><td>UC 메뉴만 실패</td><td>SSO·API·Cookie/CORS·Split DNS</td><td>로그인 성공만으로 기능 정상 아님</td></tr><tr><td>실시간 스트림 중단</td><td>SSE/WebSocket·버퍼링·WAF·timeout</td><td>HTTP 200만으로 검증 불가</td></tr><tr><td>K8s 503</td><td>Ingress·Service·EndpointSlice·Ready</td><td>Running과 Ready 구분</td></tr></table>
+<p class="warn">운영 변경·재시작·방화벽 정책 수정은 영향 평가, 승인, 원복 계획 없이 실행하지 않는다. 로그의 인증 정보·개인정보를 마스킹한다. 상세 계층별 진단은 <a href="chapter15-troubleshooting.html">15장</a>을 참고한다.</p></section>
+<section><h2>14.10 변경관리와 기술적 부채</h2>
+<table><tr><th>선택</th><th>장점</th><th>위험</th><th>통제</th></tr>
+<tr><td>공통 모니터링</td><td>상관관계 분석</td><td>권한 집중·단일 장애점</td><td>RBAC·HA·외부 합성 시험</td></tr>
+<tr><td>자동 복구</td><td>MTTR 단축</td><td>반복 재시작·증거 소실</td><td>횟수 제한·중단 조건·검증</td></tr>
+<tr><td>독립 배포</td><td>변경 영향 격리</td><td>API·인증 버전 불일치</td><td>호환성 매트릭스·계약 테스트</td></tr>
+<tr><td>수평 확장</td><td>처리량 증가</td><td>DB·큐 병목 잔존</td><td>종단 간 부하 시험·N+1</td></tr></table>
+<p>무기한 WAF 예외, 임시 hosts, 공용 관리자 계정, 복원 미검증, 문서 없는 긴급 변경은 기술적 부채다. 예외마다 담당자·만료일·제거 계획을 지정한다.</p></section>
+<section><h2>14.11 백업·복원·DR 검증</h2><p>백업 성공은 복원 성공의 충분조건이 아니다. 격리된 시험 환경에서 DB·첨부·설정·암호화 키의 일관성을 검증하고 RPO/RTO를 실제 측정한다.</p>
+<table><tr><th>단계</th><th>합격 기준</th><th>증빙</th></tr>
+<tr><td>백업 선택</td><td>시점·보존·무결성 확인</td><td>백업 ID·체크섬</td></tr>
+<tr><td>DB/파일 복원</td><td>오류 없음·데이터 정합성</td><td>복원 로그</td></tr>
+<tr><td>업무 검증</td><td>ERP 조회/저장·UC 인증/기능 정상</td><td>시험 케이스</td></tr>
+<tr><td>RPO/RTO</td><td>승인 목표 이내</td><td>시작·완료·복원 시점</td></tr>
+<tr><td>보안</td><td>시험 데이터 보호·최소 권한</td><td>접근·파기 기록</td></tr></table>
+<p>HA는 일부 구성요소 장애 대응이고, DR은 광역 장애·데이터 손실로부터의 복원 체계다. 서로 대체하지 않는다.</p></section>
+<section><h2>14.12 운영 인수인계와 PIR</h2><p>인수인계에는 서비스 카탈로그·구성도, SLI/SLO, 경보·Runbook, 백업/DR, 계정·보안 정책, 변경·버전·라이선스 이력을 포함한다.</p>
+<pre>Incident ID / 등급:
+영향 서비스·사용자 여정:
+발생 / 탐지 / 완화 / 정상화 시각:
+사용자 영향·데이터 위험:
+확인된 사실 / 미확정 가설:
+완화·원복 / 업무 검증:
+SLO·오류 예산 영향:
+재발 방지(담당자·기한·검증):
+운영 문서·경보 변경:</pre>
+<p class="note"><strong>운영 Go:</strong> 핵심 업무 계측, 경보 전달 시험, 복원 검증, 권한 분리, 인수인계가 모두 확인되어야 한다. 예외는 위험 수용자·기한·완화책을 명시한다.</p></section>
+<nav><a href="chapter14-operations-slo.html">← 14장 1부</a> · <a href="chapter15-troubleshooting.html">15장 장애 대응 →</a></nav><p class="note">독립적인 공개 교육 자료이며 OmniEsol 제조사 공식 지원 매뉴얼이 아닙니다.</p></main></body></html>
