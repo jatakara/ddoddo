@@ -237,7 +237,7 @@
         <a href="#purpose">집필 목적</a>
         <a href="#reader">대상 독자</a>
         <a href="#concept">책의 콘셉트</a>
-        <a href="#toc">전체 목차</a>
+        <a href="#toc">집필 현황 · 장별 원고</a>
         <a href="#chapter1">1장 초안</a>
         <a href="#landscape">아키텍처 유형</a>
         <a href="#compare">통합형 vs 분리형</a>
@@ -307,25 +307,21 @@
       </section>
 
       <section id="toc">
-        <h2>전체 목차 초안</h2>
-        <ol class="toc-list">
-          <li>OmniEsol이란 무엇이며 SA의 역할은?</li>
-          <li>OmniEsol System Landscape</li>
-          <li>OmniEsol System Architecture</li>
-          <li>Installation - 준비 단계</li>
-          <li>Installation - 설치 단계</li>
-          <li>Post Installation</li>
-          <li>System Administration I - 기본 운영</li>
-          <li>System Administration II - Monitoring</li>
-          <li>Patch & Upgrade</li>
-          <li>Troubleshooting & Tips</li>
-          <li>Database Management</li>
-          <li>Network & Security Configuration</li>
-          <li>Remote Support & Technical Support</li>
-          <li>Appendix I - Client / Agent / 사용자 접속</li>
-          <li>Appendix II - 실무 문서 양식</li>
-        </ol>
-      </section>
+  <h2>집필 현황 · 장별 원고</h2>
+  <p>이 페이지의 1장 개요는 기초 초안입니다. 실무형 본문은 아래 7~15장 HTML에서 순차적으로 공개하고 있습니다. 제품 공식 지원 매뉴얼이 아닌 독립 교육 자료이며, 실제 적용 시 제품별 지원 사양과 고객 정책을 우선합니다.</p>
+  <ol start="7" class="toc-list">
+    <li><a href="chapters/chapter07-sizing.html">Server Sizing Matrix</a></li>
+    <li><a href="chapters/chapter08-preparation.html">설치 전 인프라 준비</a> (<a href="chapters/chapter08-preparation-continued.html">후반</a>)</li>
+    <li><a href="chapters/chapter09-os-network-storage.html">OS·Network·Storage 기본 개념</a></li>
+    <li><a href="chapters/chapter10-erp-architecture.html">ERP 단독형 아키텍처</a> (<a href="chapters/chapter10-erp-availability.html">HA</a> · <a href="chapters/chapter10-erp-operations.html">운영</a>)</li>
+    <li><a href="chapters/chapter11-uc-architecture.html">UC 단독형 아키텍처</a> (<a href="chapters/chapter11-uc-availability.html">접속·HA</a> · <a href="chapters/chapter11-uc-sizing-security.html">Sizing·보안</a> · <a href="chapters/chapter11-uc-operations.html">운영</a>)</li>
+    <li><a href="chapters/chapter12-integrated-architecture.html">통합형 Kubernetes 아키텍처</a> (<a href="chapters/chapter12-integrated-capacity.html">용량</a> · <a href="chapters/chapter12-integrated-operations.html">운영</a>)</li>
+    <li><a href="chapters/chapter13-separated-architecture.html">ERP·UC 분리형 아키텍처</a> (<a href="chapters/chapter13-separated-connectivity.html">연계</a> · <a href="chapters/chapter13-separated-operations.html">운영</a>)</li>
+    <li><a href="chapters/chapter14-operations-slo.html">운영 점검과 SLO</a> (<a href="chapters/chapter14-operations-runbook.html">Runbook</a>)</li>
+    <li><strong><a href="chapters/chapter15-troubleshooting.html">계층별 장애 대응과 트러블슈팅</a></strong></li>
+  </ol>
+  <div class="principle"><strong>장별 전체 목차:</strong> <a href="chapters/index.html">7~15장 한눈에 보기 →</a> · <strong>다음 집필:</strong> 16장 성능 검증과 Capacity Planning</div>
+</section>
 
       <section id="chapter1">
         <h2>1장. OmniEsol이란 무엇이며 SA의 역할은?</h2>
