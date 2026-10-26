@@ -1,0 +1,80 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 16장 2부: 부하 시험 설계, ERP·UC 업무 Mix, 병목 진단, Go/No-Go"><title>16장 2부 부하 시험 설계와 결과 판독 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="chapter16.css"></head><body>
+<header><a href="index.html">← 장별 목차</a><p><span class="tag">16장 · 2/3부</span> Performance Verification &amp; Capacity Planning</p><h1>부하 시험 설계와 결과 판독</h1><p>사용자 업무를 재현하고, 평균값이 아닌 계층별 증거로 병목을 판정한다.</p></header>
+<div class="layout"><nav class="toc"><strong>16장 2부 목차</strong><a href="#s166">16.6 여섯 가지 부하 시험</a><a href="#s167">16.7 ERP·UC 혼합 부하 예제</a><a href="#s168">16.8 관측 지표 Matrix</a><a href="#s169">16.9 결과 해석의 함정</a><a href="#s1610">16.10 시험 결과서와 승인</a><hr><a href="chapter16-performance-basics.html">16장 1부: 지표</a><a href="chapter16-capacity-planning.html">16장 3부: 용량 계획</a><a href="index.html">1~16장 전체 목차</a></nav><main>
+<aside class="note"><strong>공개 교육용 참조 자료</strong><p>아래 시나리오·처리량·목표치는 모두 가상 예시다. 실제 제품 성능 보증이나 특정 고객의 운영 데이터가 아니다. 부하 시험은 승인된 비운영 환경에서 합성 데이터로 수행한다.</p></aside>
+<section id="s166"><h2>16.6 부하 시험의 여섯 가지 유형</h2>
+<p>한 번의 최대 RPS 시험으로 서버를 승인하면 장시간 메모리 증가, 배치 중 I/O 병목, 장애 후 재배치 실패를 놓치기 쉽다. 시험의 목적과 관측 지표를 먼저 분리한다.</p>
+<div class="scroll"><table><thead><tr><th>시험</th><th>목적</th><th>가상 실행 예</th></tr></thead><tbody>
+<tr><td>Baseline</td><td>낮은 부하에서 기능·관측 정상 확인</td><td>목표의 20~30%로 기초 지표 수집</td></tr>
+<tr><td>Step/Ramp</td><td>부하 증가에 따른 포화 구간 확인</td><td>60→90→120→150 RPS, 단계별 10~15분</td></tr>
+<tr><td>Peak</td><td>목표 업무 피크 처리 가능 여부</td><td>120 RPS 유지, 업무 Mix 고정</td></tr>
+<tr><td>Soak</td><td>누수·연결 풀 누적·장시간 변동 탐지</td><td>안정 부하로 수시간 지속</td></tr>
+<tr><td>Spike</td><td>짧은 로그인·배치 집중과 회복력 확인</td><td>일시적으로 목표보다 높은 도착률</td></tr>
+<tr><td>Failover</td><td>노드/Pod 장애 후 서비스 지속</td><td>승인된 Worker 격리 후 재배치·업무 검증</td></tr>
+</tbody></table></div>
+<p>순서는 <strong>기능 확인 → Baseline → 목표 피크 → 장시간/확장 → 장애/복구</strong>가 합리적이다. 실제 운영에서의 강제 장애 주입이나 대량 트래픽 생성은 별도 영향 평가와 변경 승인이 필요하다.</p>
+<aside class="warn"><strong>부하 모델의 Trade-off</strong><p>개방형(Open-loop) 부하는 지정한 요청 도착률을 유지해 포화와 큐 적체를 드러내기 쉽다. 폐쇄형(Closed-loop) 가상 사용자는 응답을 기다린 뒤 다음 동작을 수행하므로, 서버가 느려지면 실제 RPS가 떨어질 수 있다. 사용자 행동을 재현하는 시험과 최대 처리량을 측정하는 시험의 목적을 구분한다.</p></aside></section>
+<section id="s167"><h2>16.7 ERP·UC 혼합 부하 시나리오</h2>
+<p>ERP 조회, 저장·승인, UC 검색의 비중을 정하고, 성공 조건을 HTTP 응답이 아닌 <strong>업무 완료와 데이터 정합성</strong>으로 정의한다. 등록 사용자 수를 RPS로 단순 환산하지 않는다.</p>
+<div class="scroll"><table><thead><tr><th>업무 시나리오</th><th>요청 비중</th><th>목표 RPS</th><th>결과 검증</th></tr></thead><tbody>
+<tr><td>ERP 조회</td><td>70%</td><td>84</td><td>조회 조건·페이징·권한·결과 값</td></tr>
+<tr><td>ERP 저장/승인</td><td>20%</td><td>24</td><td>Commit·중복·누락·인가</td></tr>
+<tr><td>UC 검색/알림 조회</td><td>10%</td><td>12</td><td>검색 결과·메시지 상태</td></tr>
+<tr><td><strong>합계</strong></td><td><strong>100%</strong></td><td><strong>120</strong></td><td>성공 요청만 처리량으로 집계</td></tr></tbody></table></div>
+<p>120 RPS를 60분 유지하면 총 요청은 <strong>432,000건</strong>(120×3,600)이다. 0.5%의 실패는 최대 약 2,160건에 해당한다. 이 수준을 허용할 수 있는지는 업무 중요도에 따라 별도 합의해야 한다. 금융·회계 등 거래 정합성 오류는 단순 오류율과 별도로 0건을 목표로 검증한다.</p>
+<pre><code>가상 시험 정의서 PERF-16-DEMO-01
+환경: 비운영 / 합성 데이터 / 승인된 테스트 계정
+도착률: 120 RPS, 60분
+업무 Mix: ERP 조회 70% / 저장 20% / UC 조회 10%
+예시 목표: 핵심 거래 p95 ≤ 1.5초, p99 ≤ 3.0초
+예시 오류율: 0.5% 미만
+데이터 중복·누락·무단 변경: 0건
+장애 시험: Worker 1대 장애 후 성공 TPS·p95·복구시간 검증
+중단 조건: 정합성 위험, 예상 밖 운영 영향, 보안 정책 위반
+필수 증거: 스크립트 버전, 실제 RPS, 오류, Trace, WAS/DB/K8s 지표</code></pre>
+<p>동일한 키나 동일한 조회조건만 반복하면 캐시가 지나치게 잘 맞거나 락 경합이 비정상적으로 커질 수 있다. 합성 데이터의 키 분포, 문서 크기, 기간, 권한, 사용자 Think Time을 현실적인 비율로 설계한다.</p></section>
+<section id="s168"><h2>16.8 WEB·WAS·DB·Kubernetes 관측 Matrix</h2>
+<div class="scroll"><table><thead><tr><th>계층</th><th>핵심 지표</th><th>판정할 병목</th></tr></thead><tbody>
+<tr><td>Load Generator</td><td>실제 송신 RPS, CPU, 오류, 연결</td><td>부하 생성기 자체의 포화</td></tr>
+<tr><td>Browser/Proxy</td><td>TTFB, 4xx/5xx, Upstream Time, 연결 오류</td><td>DNS·TLS·WAF·Proxy·네트워크</td></tr>
+<tr><td>WAS/Java</td><td>Thread Busy, Queue, GC Pause, Heap/RSS, DB Pool</td><td>업무 로직·풀 고갈·GC</td></tr>
+<tr><td>Kubernetes</td><td>Pod Ready, Restart, CPU Throttle, OOMKilled</td><td>자원 제한·스케줄링·노드 압박</td></tr>
+<tr><td>DBMS</td><td>SQL별 CPU·Wait·Lock·Commit·Log I/O</td><td>SQL·잠금·DB I/O 병목</td></tr>
+<tr><td>Storage/Network</td><td>IOPS, Throughput, I/O Latency, Packet Loss</td><td>공유 저장소·네트워크 포화</td></tr>
+<tr><td>업무</td><td>로그인/조회/저장 성공, 결과 정합성</td><td>프로세스 정상·업무 실패 구분</td></tr>
+</tbody></table></div>
+<p>Oracle DB의 성능은 DB CPU, Wait Event, 락, 실행계획, I/O 지연을 분리해 진단한다. AWR/ASH와 같은 특정 진단 기능은 별도 라이선스 조건이 있을 수 있으므로 DBA가 사용 가능 여부를 확인한다. 관측 결과에는 실제 수집 시간 구간과 데이터 소스를 명시한다.</p>
+<pre><code># 읽기 전용 OS 점검 예시 (도구 설치 여부 확인)
+uptime
+free -h
+vmstat 1 5
+iostat -xz 1 5
+ss -s
+
+# Kubernetes 조회 권한 및 Metrics Server 필요
+kubectl get nodes
+kubectl -n example-uc get pods -o wide
+kubectl -n example-uc top pods
+kubectl describe node example-worker-1</code></pre>
+<aside class="note"><strong>도구 사용 시 주의</strong><p><code>iostat</code>는 sysstat 패키지 설치 여부에 따라 없을 수 있다. <code>kubectl top</code>은 지표 파이프라인이 있어야 동작한다. 읽기 전용 조회 명령만으로 성능 문제가 해결되지는 않는다.</p></aside></section>
+<section id="s169"><h2>16.9 성능 결과를 잘못 해석하는 다섯 가지 경우</h2>
+<div class="scroll"><table><thead><tr><th>잘못된 결론</th><th>문제</th><th>올바른 검증</th></tr></thead><tbody>
+<tr><td>평균 0.2초이므로 정상</td><td>p99 10초 거래가 숨을 수 있음</td><td>업무별 p95/p99와 오류율</td></tr>
+<tr><td>CPU 40%라서 병목 없음</td><td>DB 락·I/O·Pool 대기가 원인일 수 있음</td><td>CPU와 Wait/Queue 동시 관찰</td></tr>
+<tr><td>Pod 2배면 처리량 2배</td><td>공유 DB·Storage가 병목일 수 있음</td><td>증설 전후 동일 조건 시험</td></tr>
+<tr><td>목표 RPS를 달성함</td><td>오류 응답도 전체 RPS에 포함될 수 있음</td><td>성공 업무 TPS와 정합성</td></tr>
+<tr><td>p95가 개선됨</td><td>캐시·데이터·부하 조건이 달라졌을 수 있음</td><td>동일 조건 반복 측정</td></tr></tbody></table></div>
+<p>폐쇄형 부하 시험에서 서버가 느려질수록 요청 자체가 줄어드는 <em>coordinated omission</em>을 주의한다. 목표 도착률이 유지되어야 하는 시험이라면 일정한 도착률을 만들고, 실제로 보내지 못한 요청과 지연을 별도로 보고한다.</p>
+<p>설정 변경 후 p95만 낮아졌더라도 DB 대기와 오류율이 상승했다면 병목이 다른 계층으로 옮겨졌을 수 있다. 지표를 한 묶음으로 판단한다.</p></section>
+<section id="s1610"><h2>16.10 결과 보고서와 Go/No-Go</h2>
+<div class="scroll"><table><thead><tr><th>보고 항목</th><th>필수 기록</th></tr></thead><tbody>
+<tr><td>재현성</td><td>스크립트·제품 버전·환경·데이터 생성 방법·설정 차이</td></tr>
+<tr><td>성능</td><td>목표/실제 성공 RPS, p50/p95/p99, 오류율</td></tr>
+<tr><td>안정성</td><td>GC·메모리 증가·Pod Restart·WAS/DB Pool 대기</td></tr>
+<tr><td>정합성</td><td>업무 저장 결과, 중복·누락·권한 위반</td></tr>
+<tr><td>가용성</td><td>장애 후 성공 TPS, p95, RTO/RPO, 데이터 검증</td></tr>
+<tr><td>보안</td><td>합성 데이터, 테스트 권한, 로그 마스킹, 외부 접근 통제</td></tr>
+<tr><td>결정</td><td>Go / Conditional Go / No-Go, 잔여 위험·책임자·기한</td></tr></tbody></table></div>
+<ul><li><strong>Go:</strong> 목표 피크에서 사용자 업무, 정합성, 장애 후 처리량, 복구 목표를 충족한다.</li><li><strong>Conditional Go:</strong> 비핵심 잔여 위험이 기록되고 보완책·기한·책임자와 승인이 있다.</li><li><strong>No-Go:</strong> 핵심 거래 SLO 미달, 정합성 실패, 보안 위반, 복구 목표 미충족이 남아 있다.</li></ul>
+<aside class="note"><strong>SA의 판단</strong><p>성능 결과서는 단순한 서버 증설 요청서가 아니라, 가정·실측·위험·비용을 비교해 아키텍처 결정을 내리는 근거 문서다.</p></aside></section>
+<nav class="chapter-nav"><a href="chapter16-performance-basics.html">← 16장 1부</a><a href="chapter16-capacity-planning.html">16장 3부 · Capacity Planning →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 16장 2부 · 독립 공개 교육용 원고 · 2026-10-27</footer></body></html>

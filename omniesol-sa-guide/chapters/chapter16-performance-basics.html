@@ -1,0 +1,57 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 16장 1부: 업무 부하 모델, RPS/TPS, Little의 법칙, p95/p99와 Baseline"><title>16장 1부 성능 지표와 업무 부하 모델 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="chapter16.css"></head><body>
+<header><a href="index.html">← 장별 목차</a><p><span class="tag">16장 · 1/3부</span> Performance Verification &amp; Capacity Planning</p><h1>성능 지표와 업무 부하 모델</h1><p>등록 사용자 수가 아니라 피크 업무량·응답시간·정합성 요구를 측정 가능한 부하 모델로 변환한다.</p></header>
+<div class="layout"><nav class="toc"><strong>16장 1부 목차</strong><a href="#s161">16.1 성능 검증과 Sizing</a><a href="#s162">16.2 사용자·RPS·TPS·동시성</a><a href="#s163">16.3 p95·p99·오류율</a><a href="#s164">16.4 요청 지연 예산</a><a href="#s165">16.5 기준선과 시험 환경</a><hr><a href="chapter16-load-test.html">16장 2부: 부하 시험</a><a href="chapter16-capacity-planning.html">16장 3부: 용량 계획</a><a href="index.html">1~16장 전체 목차</a></nav><main>
+<aside class="note"><strong>공개 교육용 참조 자료</strong><p>이 장의 사용자 수, 처리량, CPU, 응답시간, 스토리지와 시험 목표는 모두 가상 예제다. OmniEsol 공식 지원 사양이나 제품 성능 보증 수치가 아니다. 실제 적용 시 공식 호환성 자료, 계약·라이선스, 고객 보안 정책과 변경 승인을 우선한다.</p></aside>
+<section id="s161"><h2>16.1 성능 검증과 Sizing의 차이</h2>
+<p><a href="chapter07-sizing.html">7장 Server Sizing Matrix</a>가 구축 전의 자원 배치 가정을 설명했다면, 16장은 그 가정이 실제 업무 부하에서 성립하는지 <strong>증명</strong>하는 방법을 다룬다. Sizing은 “CPU·메모리·스토리지·노드를 얼마나 확보할까?”에 답하고, 성능 검증은 “이 자원으로 피크 업무를 완료할 수 있는가?”에 답한다.</p>
+<figure class="diagram"><div class="flow"><div class="unit">업무 요구: 피크 시간·중요 거래·복구 목표</div><div class="arrow">↓</div><div class="unit">부하 모델: 업무 비율·RPS/TPS·데이터 크기</div><div class="arrow">↓</div><div class="unit">시험: 정상·피크·지속·장애·복구</div><div class="arrow">↓</div><div class="unit">증거: 사용자→WEB→AP/Pod→DB·Storage</div><div class="arrow">↓</div><div class="unit">결정: Sizing 보정·병목 개선·Go/No-Go</div></div><figcaption>그림 16-1. 업무 요구에서 검증 가능한 설계 결정까지</figcaption></figure>
+<div class="scroll"><table><thead><tr><th>구분</th><th>용량 산정(Sizing)</th><th>성능 검증</th></tr></thead><tbody>
+<tr><td>입력</td><td>업무 범위, 사용자 수, 성장률, 부하 추정</td><td>업무 Mix, 데이터 분포, Think Time, 시험 조건</td></tr>
+<tr><td>판단</td><td>자원·HA·복구 요구를 만족할 후보 구성</td><td>업무별 p95/p99, 성공 TPS, 오류율, DB 대기</td></tr>
+<tr><td>산출물</td><td>가정과 근거가 포함된 Sizing Matrix</td><td>재현 가능한 결과서, 병목 원인, 승인 조건</td></tr></tbody></table></div>
+<p>단순 CPU 사용률이 낮다는 이유로 시험을 통과시켜서는 안 된다. 실제 사용자가 로그인·조회·저장·승인 업무를 끝낼 수 있어야 한다.</p></section>
+<section id="s162"><h2>16.2 사용자 수·동시성·RPS·TPS</h2>
+<p>등록 사용자 1,000명과 동시 로그인 200명은 곧 200개의 요청이 동시에 실행된다는 뜻이 아니다. 사용자 대기 시간(Think Time), 화면별 API 호출 수, 배치·보고서, UC 알림, 로그인 집중에 따라 처리량이 크게 달라진다.</p>
+<div class="scroll"><table><thead><tr><th>지표</th><th>의미</th><th>혼동 주의</th></tr></thead><tbody>
+<tr><td>등록 사용자</td><td>계정이 등록된 사용자</td><td>동시 부하의 직접 지표 아님</td></tr>
+<tr><td>활성 사용자</td><td>기간 내 실제 업무를 수행한 사용자</td><td>DAU와 순간 동시 활성 구분</td></tr>
+<tr><td>동시 세션</td><td>특정 시점에 유지 중인 로그인/연결</td><td>실행 중인 요청 수와 다름</td></tr>
+<tr><td>RPS</td><td>초당 HTTP 요청 수</td><td>한 화면이 여러 API 요청을 만들 수 있음</td></tr>
+<tr><td>TPS</td><td>초당 비즈니스 트랜잭션 수</td><td>트랜잭션 경계 정의가 먼저 필요</td></tr>
+<tr><td>Think Time</td><td>사용자 동작 사이의 대기시간</td><td>생략하면 부하가 과대 추정될 수 있음</td></tr>
+</tbody></table></div>
+<h3>Little의 법칙으로 평균 진행 중 요청 수 계산</h3>
+<p>안정된 시스템에서 평균 시스템 내 요청 수 <code>L = λ × W</code>이다. λ는 평균 도착률(초당 요청 수), W는 평균 체류시간(초)이다. 예를 들어 120 RPS와 평균 0.35초라면 <strong>평균 42개의 요청이 진행 중</strong>이다. 이 값은 로그인 세션 수나 필수 스레드 수와 동일하지 않으며, 큐·비동기 처리·요청 종류에 따라 실제 자원 수요가 달라진다.</p>
+<pre><code>가상 업무 모델
+등록 사용자: 1,000명
+일간 활성 사용자: 400명
+피크 로그인 세션: 200개
+목표 요청 도착률: 120 RPS
+평균 요청 체류시간: 0.35초
+평균 in-flight 요청: 120 × 0.35 = 42
+주의: 세션 200개 ≠ 실행 중 요청 42개</code></pre></section>
+<section id="s163"><h2>16.3 p95·p99·오류율을 정확히 읽기</h2>
+<p>평균 응답시간은 느린 일부 요청을 감춘다. p95가 1.5초라면 관측 요청의 약 95%가 1.5초 이하였다는 뜻이다. p99는 더 느린 꼬리 구간을 보여준다. 단, 관측 기간·표본 수·요청 종류를 명시해야 비교가 가능하다.</p>
+<div class="scroll"><table><thead><tr><th>항목</th><th>가상 승인 목표</th><th>측정 시 주의</th></tr></thead><tbody>
+<tr><td>피크 성공 처리량</td><td>120 RPS 이상</td><td>오류 응답을 성공 처리량에 포함하지 않음</td></tr>
+<tr><td>핵심 거래 p95</td><td>1.5초 이하</td><td>업무별 엔드투엔드 시간</td></tr>
+<tr><td>핵심 거래 p99</td><td>3.0초 이하</td><td>충분한 표본과 동일 측정 구간</td></tr>
+<tr><td>오류율</td><td>0.5% 미만</td><td>예상된 4xx와 시스템 실패 정의 분리</td></tr>
+<tr><td>거래 정합성</td><td>중복·누락·오류 0건</td><td>HTTP 200 외 실제 DB 반영 확인</td></tr>
+</tbody></table></div>
+<p>ERP 조회, ERP 저장, UC 검색을 하나의 p95로 합치면 중요 거래의 지연이 숨을 수 있다. 서비스·API·사용자군별로 나눠 본다. 브라우저의 전체 완료시간과 서버 처리시간도 다른 지표다.</p>
+<aside class="warn"><strong>통계적 오류 주의</strong><p>Pod A의 p95와 Pod B의 p95를 산술평균해 전체 p95라고 보고하면 안 된다. 원시 표본 또는 병합 가능한 Histogram으로 전체 분포를 계산한다. <a href="https://prometheus.io/docs/practices/histograms/">Prometheus 공식 Histogram 문서</a>를 참고한다.</p></aside></section>
+<section id="s164"><h2>16.4 사용자 응답시간과 계층별 지연 예산</h2>
+<p>“화면이 느리다”는 증상은 DNS/TLS, Proxy, WAS 큐, DB 대기, 네트워크 전송, 브라우저 렌더링 중 어느 계층에서도 발생할 수 있다. 계층마다 시간 측정의 시작·종료 기준이 다르므로 중복 집계하지 않도록 Trace ID와 측정 정의를 통일한다.</p>
+<figure class="diagram"><div class="flow"><div class="unit">Browser: DNS·TCP/TLS·전송·렌더링</div><div class="arrow">↓</div><div class="unit">Proxy: Upstream 연결·라우팅·대기</div><div class="arrow">↓</div><div class="unit">WAS: 요청 큐·비즈니스 로직·DB 호출</div><div class="arrow">↓</div><div class="unit">DB: CPU·Lock·Wait·I/O·Commit</div></div><figcaption>그림 16-2. 응답 지연의 관측 경계</figcaption></figure>
+<div class="scroll"><table><thead><tr><th>관측 결과</th><th>가능성 높은 원인</th><th>다음 증거</th></tr></thead><tbody>
+<tr><td>TTFB 높음, WAS 시간 낮음</td><td>Proxy/네트워크/업스트림 연결</td><td>Proxy Upstream Time, TLS, 연결 로그</td></tr>
+<tr><td>WAS 시간 높음, DB 시간 낮음</td><td>스레드 큐, GC, 외부 API</td><td>Thread/GC/Connection Pool</td></tr>
+<tr><td>DB 대기시간 증가</td><td>SQL, Lock, I/O, Log Write</td><td>Wait Event, 실행계획, Storage Latency</td></tr>
+<tr><td>API는 빠르고 화면만 늦음</td><td>JS 렌더링, 정적 리소스, 다중 API</td><td>브라우저 Waterfall과 Long Task</td></tr>
+</tbody></table></div></section>
+<section id="s165"><h2>16.5 Baseline과 시험 환경의 동등성</h2>
+<p>CPU·스토리지 성능, VM 오버커밋, DB 데이터 분포, 캐시 워밍, TLS/WAF, 네트워크, 제품 버전, JVM/DB 설정이 바뀌면 동일한 120 RPS 시험도 다른 결과를 낸다. 시험 전 아래 조건을 기록해 비교 가능성을 확보한다.</p>
+<ul><li>OS/JDK/WAS/DB/Kubernetes 및 제품 버전, 패치, 설정 변경 내역</li><li>물리/VM 자원, NUMA, CPU 제한, 스토리지 종류와 I/O 지표</li><li>합성 데이터 건수·분포·인덱스·첨부파일 크기</li><li>캐시 워밍, 배치·백업·외부 연계 부하 포함 여부</li><li>사용자 경로(내부·외부·모바일) 및 부하 생성기의 CPU·네트워크 여유</li><li>관측 시간대, 클록 동기화, 로그의 민감정보 제거</li></ul>
+<aside class="note"><strong>시험 범위</strong><p>운영 데이터·고객 계정·내부 주소·비공개 제품 설정은 공개 원고에 포함하지 않는다. 부하 시험은 승인된 비운영 환경과 합성 데이터로 수행한다.</p></aside></section>
+<nav class="chapter-nav"><a href="chapter15-troubleshooting.html">← 15장</a><a href="chapter16-load-test.html">16장 2부 · 부하 시험 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 16장 1부 · 독립 공개 교육용 원고 · 2026-10-27</footer></body></html>

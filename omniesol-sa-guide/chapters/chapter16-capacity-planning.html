@@ -1,0 +1,96 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 16장 3부: CPU·메모리·Kubernetes N+1·스토리지 성장·확장 전략·Go/No-Go"><title>16장 3부 Capacity Planning과 N+1 승인 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="chapter16.css"></head><body>
+<header><a href="index.html">← 장별 목차</a><p><span class="tag">16장 · 3/3부</span> Performance Verification &amp; Capacity Planning</p><h1>Capacity Planning과 N+1 승인</h1><p>CPU·메모리·스토리지·장애 후 수용력을 수치로 계산하고 확장성과 비용의 Trade-off를 검증한다.</p></header>
+<div class="layout"><nav class="toc"><strong>16장 3부 목차</strong><a href="#s1611">16.11 CPU 실측 기반 산정</a><a href="#s1612">16.12 Heap·RSS·DB 메모리</a><a href="#s1613">16.13 Kubernetes N+1</a><a href="#s1614">16.14 스토리지 성장·복구</a><a href="#s1615">16.15 확장 방식 Trade-off</a><a href="#s1616">16.16 최종 검수</a><hr><a href="chapter16-performance-basics.html">16장 1부: 지표</a><a href="chapter16-load-test.html">16장 2부: 부하 시험</a><a href="index.html">1~16장 전체 목차</a></nav><main>
+<aside class="note"><strong>공개 교육용 참조 자료</strong><p>모든 자원·업무 수치는 가상 학습 예제이며 공식 OmniEsol 사양이나 성능 보증이 아니다. 실환경에서는 제품 지원 Matrix, 라이선스, 보안 정책, 변경 승인과 실제 부하 시험을 우선한다.</p></aside>
+<section id="s1611"><h2>16.11 CPU 수요량을 실측 기반으로 계산</h2>
+<p>초기 사양은 등록 사용자 수보다 <strong>목표 RPS × 요청당 평균 CPU 소모량</strong>으로 검증하는 것이 낫다. 요청당 CPU Time과 사용자 응답시간은 다르다. 응답이 300ms 걸렸다고 CPU를 300ms 사용한 것은 아니다. DB/네트워크 대기와 스레드 큐 시간은 별도다.</p>
+<pre><code>가상 AP CPU 예제
+목표 요청량: 120 RPS
+요청당 AP CPU Time: 12ms = 0.012 CPU-seconds
+평균 AP CPU 수요: 120 × 0.012 = 1.44 vCPU
+평균 CPU 사용률 목표: 60%
+필요 AP 계산 용량(이론치): 1.44 / 0.60 = 2.40 vCPU
+초기 배치 검토 후보: 3 vCPU 상당 AP 자원
+주의: GC, OS, 배치, 가상화, 피크 변동, DB·UC 자원 별도</code></pre>
+<p>3 vCPU는 위 가상 AP 처리량에 대한 <strong>이론적 출발점</strong>일 뿐, ERP 전체 최소 사양이나 제조사 권장 수치가 아니다. CPU Time은 업무 Mix에 따라 달라지고 병렬 처리 효율이 일정하지 않으므로 실측이 필요하다.</p>
+<aside class="warn"><strong>CPU 증설의 한계</strong><p>DB Lock·I/O·연계 API가 병목일 때 AP CPU를 증설해도 지연이 해결되지 않을 수 있다. 먼저 포화 계층을 식별하고, 실제 성공 TPS와 p95를 비교한다.</p></aside></section>
+<section id="s1612"><h2>16.12 메모리는 JVM Heap만 보지 않는다</h2>
+<p>Java 프로세스 메모리는 Heap 외에도 Metaspace, Thread Stack, Direct Buffer, JIT, Native Library 등을 포함한다. JVM 최대 Heap 8GiB를 설정했다고 RSS가 8GiB로 고정되는 것도 아니고, 8GiB가 즉시 전부 할당되는 것도 아니다.</p>
+<div class="scroll"><table><thead><tr><th>영역</th><th>확인 항목</th><th>흔한 오류</th></tr></thead><tbody>
+<tr><td>WAS/JVM</td><td>Heap, Non-Heap, RSS, Thread, GC Pause</td><td>Heap만 합산해 물리 메모리 결정</td></tr>
+<tr><td>OS</td><td>Available, Page Cache, Swap, OOM</td><td>캐시를 전부 회수 불가능한 사용량으로 오해</td></tr>
+<tr><td>Oracle DB</td><td>SGA, PGA, 세션, HugePages, OS 여유</td><td>PGA 피크와 백업·배치 부하 누락</td></tr>
+<tr><td>Kubernetes</td><td>Pod Requests/Limits, Node Allocatable</td><td>Limits 과소 설정으로 OOMKilled</td></tr>
+<tr><td>공유 서버</td><td>WAS+DB+OS+파일 캐시+운영 작업</td><td>독립 산정한 자원을 단순 합산하지 않음</td></tr></tbody></table></div>
+<p>CPU Limit은 throttling을 유발할 수 있고, Memory Limit 초과는 OOM 종료로 이어질 수 있다. Requests는 주로 스케줄링의 예약 기준이다. <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes Resource Management 공식 문서</a>를 참고한다.</p></section>
+<section id="s1613"><h2>16.13 Kubernetes N+1: 장애 후 수용력을 계산</h2>
+<p><strong>Node Allocatable</strong>은 Pod가 사용할 수 있는 노드 자원이다. kube/system 예약이 반영되지만, DaemonSet처럼 Pod로 실행되는 시스템 구성요소의 Requests는 별도로 고려해야 한다. 환경별 Allocatable과 실제 DaemonSet Requests를 확인해 중복 차감하지 않는다.</p>
+<pre><code>가상 CPU N+1 계산
+노드당 Node Allocatable: 8 vCPU
+노드당 DaemonSet Requests: 1 vCPU
+업무 Pod용 예약 예산: 8 - 1 = 7 vCPU
+업무 Pod Requests 합계: 12 vCPU
+내부 목표: 장애 후 예약 비율 75% 이하
+
+[3노드 구성]
+노드 1대 장애 후 2대 잔존
+예약 가능 예산: 2 × 7 = 14 vCPU
+장애 후 예약 비율: 12 / 14 = 85.7%
+결과: CPU 예약 여유 기준 NO-GO
+
+[4노드 구성]
+노드 1대 장애 후 3대 잔존
+예약 가능 예산: 3 × 7 = 21 vCPU
+장애 후 예약 비율: 12 / 21 = 57.1%
+결과: CPU 예약 여유 기준 통과
+단, Memory·Pod 배치·Storage·실제 부하 시험은 별도</code></pre>
+<div class="scroll"><table><thead><tr><th>추가 검증</th><th>필요 이유</th><th>실제 확인</th></tr></thead><tbody>
+<tr><td>Memory N+1</td><td>CPU가 충분해도 메모리 부족으로 Pending 발생</td><td>Allocatable·Requests·실사용량</td></tr>
+<tr><td>Pod 크기/분산</td><td>총합이 충분해도 큰 Pod가 노드에 못 들어갈 수 있음</td><td>실제 재스케줄링·Affinity·TopologySpread</td></tr>
+<tr><td>PVC/Zone</td><td>볼륨의 노드/Zone 종속성으로 재시작 실패</td><td>재연결·마운트·업무 데이터 검증</td></tr>
+<tr><td>CPU Limit/실사용</td><td>Requests만 통과해도 피크에 Throttle 발생</td><td>p95·Throttle·CPU·OOM</td></tr>
+<tr><td>공통 서비스</td><td>LB, DNS, DB, Control Plane도 장애 가능</td><td>계층별 장애·복구 시험</td></tr></tbody></table></div>
+<p>위 예제는 <strong>CPU Requests의 예약 여유만</strong> 판단한다. 실제 N+1 승인은 피크 120 RPS를 유지하면서 노드 1대 장애 후에도 성공 TPS, p95/p99, 데이터 정합성과 RTO/RPO가 충족될 때 가능하다. <a href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/">Node Allocatable 공식 문서</a>를 참고한다.</p></section>
+<section id="s1614"><h2>16.14 스토리지 성장과 복구 공간 계산</h2>
+<p>스토리지 계획은 현재 DB 크기만으로 끝나지 않는다. 데이터 파일, 인덱스, redo/archive, Temp, 백업, 첨부파일, 재구축 중 임시 공간을 분리한다.</p>
+<pre><code>가상 데이터 볼륨 계산 (GiB)
+초기 데이터: 400 GiB
+연평균 증가율: 20%
+3년 후 예상 데이터: 400 × 1.2³ = 691.2 GiB
+목표 사용률 상한: 70% (30% 여유)
+필요 볼륨: 691.2 / 0.70 = 약 987.4 GiB
+검토 후보: 1 TiB(=1024 GiB) 이상
+미포함: 백업·Archive·Temp·복제 여유·기타 파일</code></pre>
+<div class="scroll"><table><thead><tr><th>영역</th><th>별도 산정이 필요한 이유</th></tr></thead><tbody>
+<tr><td>DB 데이터/인덱스</td><td>업무 건수·삭제/보존 정책·인덱스 성장</td></tr>
+<tr><td>Redo/Archive</td><td>쓰기 피크·백업 주기·복구 지점</td></tr>
+<tr><td>Temp</td><td>대용량 정렬·보고서·배치</td></tr>
+<tr><td>첨부파일</td><td>문서 크기 분포와 보관 기간</td></tr>
+<tr><td>백업/DR</td><td>Full/Incremental 보관·독립 장애 도메인</td></tr>
+<tr><td>I/O 성능</td><td>IOPS·Throughput뿐 아니라 p95/p99 지연</td></tr></tbody></table></div>
+<p>단일 벤치마크에서 측정된 최대 GB/s를 실제 업무 트랜잭션 처리량으로 환산해서는 안 된다. DB의 랜덤 I/O, Commit Latency와 스토리지 공유 상태를 함께 측정한다.</p></section>
+<section id="s1615"><h2>16.15 확장 방식의 Trade-off와 실행 트리거</h2>
+<div class="scroll"><table><thead><tr><th>대안</th><th>장점</th><th>단점/위험</th><th>판단 근거</th></tr></thead><tbody>
+<tr><td>AP 수평 확장</td><td>Stateless 요청 분산</td><td>DB·세션·LB 병목 잔존</td><td>AP Queue/CPU 포화, DB 여유</td></tr>
+<tr><td>AP 수직 확장</td><td>구조 변경이 적음</td><td>VM 상한·장애 영향 확대</td><td>CPU/GC 병목과 라이선스</td></tr>
+<tr><td>SQL/DB 튜닝</td><td>병목 제거 비용 효율</td><td>실행계획·정합성 회귀 위험</td><td>Wait·SQL별 지연·Lock</td></tr>
+<tr><td>DB 증설/HA</td><td>성능·복구 목표 개선 가능</td><td>라이선스·복제·운영 복잡도</td><td>DB 포화, RTO/RPO</td></tr>
+<tr><td>K8s 노드 추가</td><td>Pod 배치·N+1 여유</td><td>Storage·Network·Control Plane 의존</td><td>Pending, 장애 재배치, Requests</td></tr>
+<tr><td>스토리지 개선</td><td>I/O 대기 감소 가능</td><td>DB 락·CPU 병목은 그대로</td><td>실측 Latency·DB Wait</td></tr></tbody></table></div>
+<p>자동 확장에도 이미지 다운로드, Pod Ready, Node Provisioning, DB Connection, 네트워크·보안 정책의 리드타임이 있다. 확장 트리거는 평균 CPU 한 값이 아니라 <strong>성공 TPS, p95, 큐 대기, 남은 자원, 증설 소요시간</strong>을 함께 본다.</p>
+<aside class="warn"><strong>보안·운영 부채</strong><p>성능 때문에 WAF를 우회하거나 인증·감사 기능을 끄는 것은 적절한 튜닝이 아니다. 부하를 유발하는 정책은 최소 범위로 원인을 분리하고 보안 담당과 대안을 검증한다. 미검증 자동 확장 규칙은 DB 연결 폭증과 장애 전파를 일으킬 수 있다.</p></aside></section>
+<section id="s1616"><h2>16.16 SA 최종 검수표와 다음 장</h2>
+<div class="scroll"><table><thead><tr><th>검수 항목</th><th>완료 조건</th></tr></thead><tbody>
+<tr><td>요구사항</td><td>피크 업무·RPS/TPS·동시성·성장률의 근거 기록</td></tr>
+<tr><td>시험 재현성</td><td>버전·업무 Mix·데이터 분포·도구·생성기 자원 고정</td></tr>
+<tr><td>SLO</td><td>업무별 p95/p99·성공률·정합성 목표 합의</td></tr>
+<tr><td>병목 증거</td><td>WEB/WAS/DB/K8s/Storage 계층별 측정 확보</td></tr>
+<tr><td>N+1</td><td>CPU·Memory·Pod 배치·PVC·LB/DB 장애 검증</td></tr>
+<tr><td>복구</td><td>백업·복원·RTO/RPO·정합성 시험 결과 기록</td></tr>
+<tr><td>보안</td><td>합성 데이터·최소 권한·로그 마스킹·비밀정보 보호</td></tr>
+<tr><td>비용/지원</td><td>공식 지원 버전·라이선스·3~5년 TCO 검토</td></tr>
+<tr><td>최종 승인</td><td>Go/Conditional Go/No-Go와 위험 수용자 지정</td></tr></tbody></table></div>
+<aside class="note"><strong>16장 결론</strong><p>성능 검증의 목적은 서버 사용률을 낮추는 것이 아니라 <strong>정해진 업무 부하와 장애 조건에서도 사용자가 정상적으로 거래를 완료한다는 사실을 증명</strong>하는 것이다.</p></aside>
+<p><strong>다음 집필:</strong> 17장 보안 아키텍처와 운영 하드닝 — 신뢰 경계, 계정·비밀 관리, 인증서, WAF, 패치, 감사와 보안 점검.</p>
+<p class="sources"><strong>공식 기술 참고:</strong> <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes Resource Management</a> · <a href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/">Node Allocatable</a> · <a href="https://prometheus.io/docs/practices/histograms/">Prometheus Histograms</a> · <a href="https://sre.google/workbook/implementing-slos/">Google SRE Workbook: Implementing SLOs</a> · <a href="https://sre.google/workbook/alerting-on-slos/">Alerting on SLOs</a>.</p></section>
+<nav class="chapter-nav"><a href="chapter16-load-test.html">← 16장 2부</a><a href="index.html">전체 장별 목차 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 16장 3부 · 독립 공개 교육용 원고 · 2026-10-27</footer></body></html>
