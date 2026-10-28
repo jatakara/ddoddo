@@ -1,0 +1,57 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 18장 3부: Cold/Warm/Hot 비교, Fencing, DR Runbook, DNS·SSO 전환, Go/No-Go"><title>18장 3부 DR 전환·훈련·운영 승인 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 장별 목차</a><p><span class="tag">18장 · 3/3부</span> Backup · Recovery · Disaster Recovery</p><h1>DR 전환·훈련·운영 승인</h1><p>Cold/Warm/Hot 비교, Fencing, DR Runbook, DNS·SSO 전환, Go/No-Go</p></header>
+<div class="layout"><nav class="toc"><strong>18장 3부 목차</strong><a href="#s13">18.13 DR 아키텍처 선택과 Trade-off</a><a href="#s14">18.14 DR 전환 Runbook: 선언부터 개방까지</a><a href="#s15">18.15 DR 전환 시간 예산과 DNS의 함정</a><a href="#s16">18.16 복구 훈련과 장애 주입 시나리오</a><a href="#s17">18.17 RACI·보안·비용과 Go/No-Go</a><a href="#s18">18.18 실무 제출 양식·참고 문서·다음 장</a><hr><a href="chapter18-backup-strategy.html">18장 1부 · 백업 전략</a><a href="chapter18-database-k8s-recovery.html">18장 2부 · DB/K8s 복구</a><a href="chapter18-dr-operations.html">18장 3부 · DR 운영</a><a href="index.html">1~18장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>특정 고객·제품 버전의 공식 설치·지원·복구 매뉴얼이 아니다. 모든 수치와 토폴로지는 가상 예시다. 실서버 복구·전환·삭제는 공식 지원 Matrix, 백업 소유자, 보안 정책, 변경 승인과 복구 훈련을 전제로 한다.</p></aside>
+<section id="s13"><h2>18.13 DR 아키텍처 선택과 Trade-off</h2>
+<p>DR 설계는 단순히 “원격지에 서버 한 대 더 설치”가 아니다. 장애 범위, RTO/RPO, 운영 비용, 네트워크 지연, 라이선스, 인력 가용성에 따라 Cold/Warm/Hot Standby와 Active-Active를 비교해야 한다. 아래는 일반적인 참조 구조이며 OmniEsol의 특정 배포 지원을 보증하지 않는다.</p>
+<div class="scroll"><table><thead><tr><th>방식</th><th>장점</th><th>한계·비용</th><th>검증할 조건</th></tr></thead><tbody><tr><td>Cold Standby</td><td>상시 운영비 낮음</td><td>설치·데이터 복원으로 RTO 길어짐</td><td>이미지·키·자동화 재현성</td></tr><tr><td>Warm Standby</td><td>복구 속도와 비용 절충</td><td>사전 자원·복제 관리 필요</td><td>동기화·증설·연계 테스트</td></tr><tr><td>Hot Standby</td><td>빠른 전환 가능</td><td>상시 자원·운영 비용 높음</td><td>복제 지연·쓰기 차단·전환 시험</td></tr><tr><td>Active-Active</td><td>동시 서비스·분산 가능</td><td>데이터 충돌·복잡성·운영 부담 매우 큼</td><td>제품 공식 지원·분산 일관성</td></tr></tbody></table></div>
+<figure class="diagram"><div class="flow"><div class="node">Primary: WEB/WAS · ERP DB · UC/K8s · 파일 저장소</div><div class="arrow">↓</div><div class="node">전용/보호된 복제 채널 · 로그/백업 사본 · 키 관리</div><div class="arrow">↓</div><div class="node">DR: 대기 인프라 · 복구 가능한 DB/파일 · 접속 경로</div><div class="arrow">↓</div><div class="node">장애 선언 → 쓰기 차단 → 데이터 검증 → 서비스 전환</div></div><figcaption>그림 18-3. 교육용 Warm DR (복제는 백업을 대체하지 않음)</figcaption></figure>
+<p>Active-Active는 비용 대비 가용성이 좋아 보일 수 있으나 데이터 일관성과 제품 지원성이 충족되지 않으면 위험하다. 업무별로 Active-Passive를 기본 비교 대상으로 놓고 기술 검증 결과에 따라 선택한다.</p>
+</section>
+<section id="s14"><h2>18.14 DR 전환 Runbook: 선언부터 개방까지</h2>
+<p>실제 장애에서 가장 어려운 것은 명령 입력이 아니라 <strong>누가 전환을 결정하고 어떤 데이터 시점을 선택하는지</strong>다. Runbook에는 승인자, 통신 수단, 판단 시간, 복구 시점, 되돌릴 수 없는 작업과 증거를 포함한다.</p>
+<div class="scroll"><table><thead><tr><th>단계</th><th>책임자(예시)</th><th>필수 확인/승인</th></tr></thead><tbody><tr><td>탐지·영향 분석</td><td>운영/관제</td><td>장애 범위·마지막 정상 시각</td></tr><tr><td>DR 선언</td><td>업무 책임자·Incident Commander</td><td>RTO 위협·전환 조건·고객 공지</td></tr><tr><td>원본 쓰기 차단(Fencing)</td><td>DBA·네트워크</td><td>Split-brain/이중 쓰기 방지 증거</td></tr><tr><td>복구 시점 확정</td><td>DBA·업무 책임자</td><td>마지막 안전한 로그/파일 시점·RPO</td></tr><tr><td>인프라/데이터 기동</td><td>플랫폼·DBA</td><td>복원 성공·키·서비스 계정·권한</td></tr><tr><td>업무 검증</td><td>업무 QA·운영</td><td>로그인·조회·저장·승인·첨부·연계</td></tr><tr><td>DNS/LB 전환</td><td>네트워크·보안</td><td>내외부 접근·TLS·WAF·SSO</td></tr><tr><td>개방·사후 기록</td><td>Incident Commander</td><td>Go/No-Go·고객 공지·남은 위험</td></tr></tbody></table></div>
+<aside class="warn"><strong>이중 쓰기 위험</strong><p>원본 사이트가 불안정하지만 살아 있는 상태에서 DR 사이트의 쓰기를 먼저 열면 두 곳의 데이터가 갈라질 수 있다. DB·애플리케이션·외부 송신 경로를 포함한 Fencing 절차가 필수다.</p></aside>
+</section>
+<section id="s15"><h2>18.15 DR 전환 시간 예산과 DNS의 함정</h2>
+<p>전환 절차별 소요시간을 미리 할당하면 RTO 미달 원인을 찾기 쉽다. 다음은 가상 시간 예산이다. 전체 120분 목표를 맞추려면 모든 단계를 단순히 120분 이내에 시작하는 것으로는 부족하다.</p>
+<pre><code>가상 RTO 예산 (총 120분)
+장애 탐지·선언           10분
+원본 쓰기 차단·데이터 확인 15분
+DR DB/스토리지 기동       40분
+ERP·UC 애플리케이션 기동   20분
+DNS/LB/보안 경로 전환     10분
+업무·데이터 정합성 검증    25분
+합계                    120분
+주의: 단계 간 병렬 처리 가능 여부를 시험으로 검증</code></pre>
+<p>DNS TTL을 60초로 설정했다고 모든 사용자 연결이 60초 이내 전환되는 것은 아니다. 리졸버·클라이언트 캐시, 장시간 연결, 모바일 앱 내부 주소, 외부 API Allowlist, 인증서와 세션 유지 정책이 영향을 준다. 외부망과 내부망을 분리해 재접속 시험한다.</p>
+<div class="scroll"><table><thead><tr><th>검증 대상</th><th>대표 실패 사례</th><th>대응 설계</th></tr></thead><tbody><tr><td>DNS/TTL</td><td>캐시·분산 리졸버 지연</td><td>전환 전후 다중 네트워크 시험</td></tr><tr><td>TLS/WAF</td><td>DR 인증서 누락·Host 불일치</td><td>동일 보안 정책·인증서 관리</td></tr><tr><td>SSO/IdP</td><td>DR URL Redirect 불일치</td><td>사전 등록·토큰/쿠키 시험</td></tr><tr><td>외부 연계</td><td>파트너 IP Allowlist 미갱신</td><td>사전 승인·대체 접속 경로</td></tr><tr><td>배치/큐</td><td>양 사이트에서 중복 실행</td><td>배치 잠금·멱등성·전환 체크리스트</td></tr></tbody></table></div>
+</section>
+<section id="s16"><h2>18.16 복구 훈련과 장애 주입 시나리오</h2>
+<p>DR은 문서 검토만으로 검증되지 않는다. 서비스 장애와 데이터 복구는 서로 다른 훈련이다. 운영 데이터 대신 가상·비식별 데이터를 사용하고, 처음에는 독립된 시험 환경에서 복원한 뒤 승인된 범위에서 단계적으로 실환경 전환 훈련을 수행한다.</p>
+<div class="scroll"><table><thead><tr><th>시나리오</th><th>관찰 항목</th><th>통과 기준(예시)</th></tr></thead><tbody><tr><td>AP 노드 1대 중단</td><td>업무 오류율·N+1 재배치</td><td>핵심 거래 성공</td></tr><tr><td>ERP DB 파일 손상</td><td>백업 검색·RMAN Validate·복원</td><td>DB OPEN + 거래 정합성</td></tr><tr><td>UC 첨부파일 유실</td><td>메타데이터·원본 파일 연결</td><td>복구 대상 파일 접근 성공</td></tr><tr><td>백업 저장소 접근 장애</td><td>오프사이트/격리 사본</td><td>대체 경로로 복원</td></tr><tr><td>주센터 전체 불능</td><td>DR 선언·데이터·DNS/SSO 전환</td><td>승인된 RTO/RPO 충족</td></tr><tr><td>관리 계정 탈취 가정</td><td>백업 삭제 차단·키 격리</td><td>보안 통제/감사 증거 확보</td></tr></tbody></table></div>
+<p>복구 훈련 기록에는 시작/종료 시각, 사용한 백업 세트와 로그의 식별자(민감정보 제거), 데이터 복구 시점, 정상 업무 완료 시각, 결함, 담당자, 개선 완료 예정일을 남긴다.</p>
+</section>
+<section id="s17"><h2>18.17 RACI·보안·비용과 Go/No-Go</h2>
+<div class="scroll"><table><thead><tr><th>검수 항목</th><th>GO 기준</th><th>NO-GO 신호</th></tr></thead><tbody><tr><td>업무 목표</td><td>업무별 RTO/RPO 승인·실측 충족</td><td>기술팀 임의 목표</td></tr><tr><td>데이터</td><td>DB·첨부·메시지·외부 연계 정합성</td><td>단일 DB 백업만 존재</td></tr><tr><td>백업/키</td><td>오프사이트·암호화·격리 사본·키 복구</td><td>동일 관리자 권한으로 전부 삭제 가능</td></tr><tr><td>복구 실행</td><td>독립 복원 시험과 RTO 기록</td><td>백업 성공 로그만 존재</td></tr><tr><td>DR 전환</td><td>Fencing·DNS·SSO·외부 API 시험</td><td>이중 쓰기·전환 승인 부재</td></tr><tr><td>확장성</td><td>성장률·백업창·복원 처리량 실측</td><td>용량 증가 시 RTO 급증</td></tr><tr><td>운영 책임</td><td>업무/DBA/플랫폼/보안 RACI</td><td>복구·전환 소유자 불명</td></tr><tr><td>비용</td><td>저장·복제·회선·라이선스·훈련 비용</td><td>장기 운영비 누락</td></tr></tbody></table></div>
+<aside class="note"><strong>기술적 부채 경고</strong><p>'서버만 이중화'와 '백업 성공이면 복구 완료'라는 문구는 향후 대규모 장애에서 치명적인 운영 부채가 된다. 실제 업무 성공까지 복구 시간을 측정하고, 복구 의존성을 코드·구성·문서로 관리해야 한다.</p></aside>
+</section>
+<section id="s18"><h2>18.18 실무 제출 양식·참고 문서·다음 장</h2>
+<p>장 18의 최종 산출물은 다음 다섯 가지다: <strong>① 데이터 자산/백업 Matrix ② 업무별 RTO/RPO 승인서 ③ 복구 의존성도 ④ DR 전환·원복 Runbook ⑤ 복구 훈련 결과서</strong>. 특히 훈련 결과서에는 목표치와 실측치, 차이 원인, 다음 개선 담당자와 기한을 기록한다.</p>
+<pre><code>복구 훈련 결과서 (가상 양식)
+- 업무/서비스: ERP 핵심 거래 / UC 메시지·파일
+- 시나리오: 주센터 전체 불능
+- 목표 RTO / RPO: [업무 승인값]
+- 복구 대상 및 백업 세트: [식별자만 기록]
+- 사고/선언/DB복구/업무개방 시각: [시간]
+- 마지막 안전한 데이터 시점: [시간]
+- 실측 RTO / RPO: [분]
+- 정합성 시험: 전표 수·승인 이력·파일 참조·메시지
+- 보안 검증: MFA·권한·TLS·감사·암호화 키
+- 결과: GO / 조건부 GO / NO-GO
+- 미해결 이슈·담당자·기한: [...]</code></pre>
+<p class="sources"><strong>공식 기술 참고:</strong> <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/bradv/" rel="noopener noreferrer">Oracle Database 19c Backup and Recovery User's Guide</a> · <a href="https://kubernetes.io/docs/concepts/storage/volume-snapshots/" rel="noopener noreferrer">Kubernetes Volume Snapshots</a> · <a href="https://velero.io/docs/main/file-system-backup/" rel="noopener noreferrer">Velero File System Backup</a>.</p>
+<p>연관 장: <a href="chapter02-landscape.html">2장 Landscape</a>, <a href="chapter13-separated-operations.html">13장 분리형 HA/DR</a>, <a href="chapter14-operations-runbook.html">14장 운영 Runbook</a>, <a href="chapter16-capacity-planning.html">16장 Capacity Planning</a>, <a href="chapter17-security-operations.html">17장 보안 운영</a>.</p>
+<aside class="note"><strong>다음 집필</strong><p>19장 설치·변경·패치·업그레이드 운영 — 제품 지원 Matrix, 배포 순서, 의존성, 롤백·데이터 마이그레이션, 무중단 가능 범위, 릴리스 검증.</p></aside>
+</section>
+<nav class="chapter-nav"><a href="chapter18-database-k8s-recovery.html">← 18장 이전 부</a><a href="index.html">1~18장 목차 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 18장 3부 · 2026-10-29 · 독립 공개 교육용 원고</footer></body></html>

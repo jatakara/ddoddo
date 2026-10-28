@@ -1,0 +1,41 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 18장 1부: 업무 RTO/RPO, 자산별 백업 정책, HA·DR 차이와 복구 의존성"><title>18장 1부 백업·복구 목표와 데이터 보호 Matrix | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 장별 목차</a><p><span class="tag">18장 · 1/3부</span> Backup · Recovery · Disaster Recovery</p><h1>백업·복구 목표와 데이터 보호 Matrix</h1><p>업무 RTO/RPO, 자산별 백업 정책, HA·DR 차이와 복구 의존성</p></header>
+<div class="layout"><nav class="toc"><strong>18장 1부 목차</strong><a href="#s1">18.1 백업, 복원, 복구, HA, DR의 차이</a><a href="#s2">18.2 업무 요구에서 RTO·RPO를 도출하기</a><a href="#s3">18.3 ERP·UC 데이터 자산별 보호 Matrix</a><a href="#s4">18.4 복구 의존성 지도와 최소 복구 단위</a><a href="#s5">18.5 백업 보존·복제·격리 설계</a><a href="#s6">18.6 백업 정책 문서와 책임 분장</a><hr><a href="chapter18-backup-strategy.html">18장 1부 · 백업 전략</a><a href="chapter18-database-k8s-recovery.html">18장 2부 · DB/K8s 복구</a><a href="chapter18-dr-operations.html">18장 3부 · DR 운영</a><a href="index.html">1~18장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>특정 고객·제품 버전의 공식 설치·지원·복구 매뉴얼이 아니다. 모든 수치와 토폴로지는 가상 예시다. 실서버 복구·전환·삭제는 공식 지원 Matrix, 백업 소유자, 보안 정책, 변경 승인과 복구 훈련을 전제로 한다.</p></aside>
+<section id="s1"><h2>18.1 백업, 복원, 복구, HA, DR의 차이</h2>
+<p>ERP·UC 인프라를 설계할 때 “백업 서버가 있으니 이중화는 필요 없다”거나 “DB 이중화가 있으니 백업은 필요 없다”는 결론은 모두 위험하다. 각각 해결하는 장애 유형이 다르다. <strong>Backup은 복구 가능한 데이터를 보존</strong>하고, Restore는 사본을 되돌리며, Recovery는 로그 적용과 정합성 확인으로 사용 가능한 상태까지 전진시키는 과정이다. HA는 장애 중 서비스 중단을 줄이는 기술이고, DR은 주 운영 환경을 잃었을 때 대체 장소·절차로 업무를 복구하는 체계다.</p>
+<div class="scroll"><table><thead><tr><th>개념</th><th>목표</th><th>대응 장애</th><th>놓치기 쉬운 한계</th></tr></thead><tbody><tr><td>백업(Backup)</td><td>특정 시점 데이터 사본 보존</td><td>삭제·논리 오류·랜섬웨어·장비 손실</td><td>사본이 있어도 복원 성공을 보증하지 않음</td></tr><tr><td>복원(Restore)</td><td>백업으로 데이터 파일 재구성</td><td>DB·파일 손실</td><td>애플리케이션 기동과 업무 검증은 별도</td></tr><tr><td>복구(Recovery)</td><td>로그 적용·트랜잭션 정합성 확보</td><td>백업 이후 데이터 차이</td><td>필요 로그가 누락되면 목표 시점 도달 불가</td></tr><tr><td>HA</td><td>단일 구성요소 고장에 대한 서비스 지속</td><td>AP/DB/노드 일부 장애</td><td>잘못된 데이터 변경은 복제될 수 있음</td></tr><tr><td>DR</td><td>센터·공통 장애 도메인 손실 대응</td><td>시설·스토리지·광역 네트워크 장애</td><td>DNS·인증·외부 연계·운영자 접근까지 필요</td></tr></tbody></table></div>
+<aside class="note"><strong>SA 판단 원칙</strong><p>HA, 백업, DR은 서로 대체재가 아니다. 하나의 DB 장애를 막는 구성과 고객 업무 데이터를 복구하는 구성은 별도 승인·시험이 필요하다.</p></aside>
+</section>
+<section id="s2"><h2>18.2 업무 요구에서 RTO·RPO를 도출하기</h2>
+<p><strong>RTO(Recovery Time Objective)</strong>는 사고 이후 업무를 다시 제공하기까지 허용하는 최대 시간이다. <strong>RPO(Recovery Point Objective)</strong>는 복구 시점에서 허용하는 데이터 손실 시간의 상한이다. 수치가 낮을수록 복제, 스토리지, 네트워크, 운영 인력 비용이 증가하는 경향이 있다. 이는 인프라 담당자가 단독으로 정할 수 없으며 업무 소유자의 승인이 필요하다.</p>
+<div class="scroll"><table><thead><tr><th>업무 분류(교육용 예시)</th><th>목표 RTO</th><th>목표 RPO</th><th>기술·비용 검토</th></tr></thead><tbody><tr><td>급여·전표 확정 등 핵심 거래</td><td>2시간</td><td>15분</td><td>지속 로그 보존, DR 사전 구성, 정합성 재처리</td></tr><tr><td>일반 업무 조회</td><td>8시간</td><td>4시간</td><td>정기 백업+로그 복구 또는 복제 검토</td></tr><tr><td>검색 인덱스·재생성 가능 캐시</td><td>24시간</td><td>원본 기준 재생성</td><td>원본 보호와 재구축 시간 검증</td></tr></tbody></table></div>
+<p>위 숫자는 <strong>공식 제품 권장값이 아닌 가상 업무 협의 예시</strong>다. 서비스별 RTO/RPO를 단일 시스템 전체에 기계적으로 적용하면 불필요한 비용이 발생하거나 중요한 데이터가 누락될 수 있다.</p>
+<pre><code>가정: 매일 02:00에 완전 백업 1회, 중간 로그 백업 없음
+장애 시각: 같은 날 18:00
+마지막 복구 가능 시점: 02:00
+실제 손실 가능 구간: 16시간
+다음 백업 직전 사고라면 손실 가능 구간은 거의 24시간
+=&gt; RPO 15분이라는 목표를 충족할 수 없음</code></pre>
+<p>백업 주기는 RPO를 결정하는 하나의 요소일 뿐이다. 마지막으로 <em>원격에 안전하게 보존되어 실제 복구에 사용할 수 있는 로그</em>의 시각을 기준으로 RPO를 검증한다.</p>
+</section>
+<section id="s3"><h2>18.3 ERP·UC 데이터 자산별 보호 Matrix</h2>
+<p>ERP DB만 백업하면 제품 전체가 복구된다고 볼 수 없다. UC는 메시지·파일·메타데이터·인증 연계 등 다중 저장소를 사용할 수 있다. 실제 저장 위치는 도입한 제품 모듈과 검증된 배포 구성에 따라 조사해야 한다.</p>
+<div class="scroll"><table><thead><tr><th>자산</th><th>보호 단위</th><th>필수 정합성/복구 질문</th><th>책임 주체(예시)</th></tr></thead><tbody><tr><td>ERP 업무 DB</td><td>DB 데이터·제어파일·복구 로그</td><td>전표 Commit까지 재현 가능한가?</td><td>DBA</td></tr><tr><td>UC 데이터베이스</td><td>메시지·협업 메타데이터</td><td>첨부파일·메타데이터 시점 일치?</td><td>UC 운영/DBA</td></tr><tr><td>첨부파일/객체 저장소</td><td>파일 본문·버전·메타데이터</td><td>DB 참조 파일이 실제 존재하는가?</td><td>스토리지/서비스</td></tr><tr><td>인증/SSO 연계</td><td>구성·인증서·신뢰 설정</td><td>복구 후 로그인·토큰 갱신 가능한가?</td><td>IAM/보안</td></tr><tr><td>K8s 설정</td><td>GitOps 매니페스트·CRD·PVC 매핑</td><td>동일 버전과 의존성으로 재배포 가능한가?</td><td>플랫폼 운영</td></tr><tr><td>배포 Artifact</td><td>이미지·패키지·환경 설정</td><td>원본 Registry 장애 시 재구축 가능한가?</td><td>배포 운영</td></tr><tr><td>암호화 키</td><td>TDE·백업 키·KMS·Secret 관리</td><td>키 없이 복구가 불가능한가?</td><td>보안/DBA</td></tr></tbody></table></div>
+<aside class="warn"><strong>주의: 백업 대상 누락</strong><p>DB 백업은 정상인데 암호화 키, 이미지 태그, 파일 저장소가 유실되면 서비스 복구가 실패할 수 있다. 자산별 복구 의존성 표를 백업 설계와 함께 관리한다.</p></aside>
+</section>
+<section id="s4"><h2>18.4 복구 의존성 지도와 최소 복구 단위</h2>
+<figure class="diagram"><div class="flow"><div class="node">DR 네트워크 · 라우팅 · 관리 접근 · DNS</div><div class="arrow">↓</div><div class="node">가상화/OS · Kubernetes · Registry · Storage</div><div class="arrow">↓</div><div class="node">암호화 키/KMS · DB/파일 데이터 복원</div><div class="arrow">↓</div><div class="node">ERP/UC 애플리케이션 · SSO/외부 연계</div><div class="arrow">↓</div><div class="node">업무 정합성 검증 · 트래픽 전환</div></div><figcaption>그림 18-1. 일반적인 서비스 복구 의존성 (교육용, 제품별 실제 구조는 다름)</figcaption></figure>
+<p>기술적으로 DB가 열려도 인증서·DNS·Proxy가 준비되지 않으면 사용자 RTO는 달성되지 않는다. 따라서 <strong>RTO는 데이터베이스가 OPEN되는 시간이 아니라 승인된 핵심 업무가 성공한 시각까지</strong> 측정한다. 복구 절차는 인프라 의존성 순서와 데이터 정합성 순서를 함께 고려해야 한다.</p>
+<div class="scroll"><table><thead><tr><th>복구 단위</th><th>검증할 사용자 기능</th></tr></thead><tbody><tr><td>DB 단독</td><td>DB 연결·읽기·쓰기·Commit 및 복구 시점</td></tr><tr><td>ERP 업무</td><td>로그인, 전표 조회, 승인·저장, 배치 재개</td></tr><tr><td>UC 협업</td><td>로그인, 메시지·알림·파일 다운로드, 연계 API</td></tr><tr><td>전체 플랫폼</td><td>ERP↔UC 링크·인증·공통 기능·외부 사용자 경로</td></tr></tbody></table></div>
+</section>
+<section id="s5"><h2>18.5 백업 보존·복제·격리 설계</h2>
+<p>백업을 운영 서버의 같은 파일시스템에 보관하면 스토리지 손상이나 권한 탈취 시 함께 손실될 수 있다. <strong>3-2-1</strong>은 복수 사본·서로 다른 저장 매체·외부 보관을 점검하는 출발점이며, 랜섬웨어 대응에서는 별도 자격증명·변조 방지·오프라인/격리 사본을 추가로 검토한다. 모든 환경에 동일한 제품·숫자를 강제하는 규정으로 해석하지 않는다.</p>
+<div class="scroll"><table><thead><tr><th>설계 옵션</th><th>장점</th><th>한계·Trade-off</th></tr></thead><tbody><tr><td>운영센터 로컬 백업</td><td>빠른 복원·낮은 네트워크 비용</td><td>센터 전체 장애에 취약</td></tr><tr><td>별도 백업 저장소</td><td>운영 스토리지 장애 격리</td><td>관리 계정 공유 시 동시 침해 가능</td></tr><tr><td>원격 복제/오프사이트</td><td>센터 장애·데이터 손실 위험 감소</td><td>회선·보존·복제 지연 비용</td></tr><tr><td>Immutable/Offline 사본</td><td>삭제·암호화 공격 방어 강화</td><td>보관 비용·키 관리·복구 절차 복잡화</td></tr></tbody></table></div>
+<p>백업 저장소는 별도 관리자 권한, MFA, 암호화, 키 복구, 감사 로그, 보존·삭제 승인 정책을 갖춘다. 복구 테스트 계정과 실제 운영 데이터 접근권한도 분리한다.</p>
+</section>
+<section id="s6"><h2>18.6 백업 정책 문서와 책임 분장</h2>
+<div class="scroll"><table><thead><tr><th>정책 필드</th><th>예시 작성값(가상)</th><th>검증 증거</th></tr></thead><tbody><tr><td>대상/소유자</td><td>ERP DB — DBA, UC 파일 — 서비스 운영</td><td>자산 인벤토리</td></tr><tr><td>RTO/RPO</td><td>업무 소유자가 승인한 목표</td><td>승인 기록</td></tr><tr><td>방식·주기</td><td>Full/Incremental/Log + 오프사이트</td><td>실행 로그와 저장 위치</td></tr><tr><td>보존·삭제</td><td>규정/업무 요구 기반 기간</td><td>보존 정책과 만료 테스트</td></tr><tr><td>암호화·키</td><td>키 소유자, 재해 시 복구 경로</td><td>격리된 키 복구 시험</td></tr><tr><td>복구 테스트</td><td>정기 샌드박스 복원, 데이터 검증</td><td>시간·성공률·결함 기록</td></tr><tr><td>예외·변경</td><td>미충족 RPO, 저장소 경고, 실패 백업</td><td>위험 승인·개선 기한</td></tr></tbody></table></div>
+<p>백업 성공 메일은 '복구 성공' 증거가 아니다. 백업 세트 검증과 별도 환경 복원 시험을 함께 관리한다.</p>
+</section>
+<nav class="chapter-nav"><a href="chapter17-security-operations.html">← 17장 보안 운영</a><a href="chapter18-database-k8s-recovery.html">18장 다음 부 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 18장 1부 · 2026-10-29 · 독립 공개 교육용 원고</footer></body></html>

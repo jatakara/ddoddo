@@ -1,0 +1,55 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 18장 2부 Oracle RMAN, PITR, Kubernetes PVC/VolumeSnapshot 및 데이터 복구"><title>18장 2부 Oracle RMAN·Kubernetes 영속 데이터 복구 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body><header><a href="index.html">← 장별 목차</a><p><span class="tag">18장 · 2/3부</span> Backup · Recovery · Disaster Recovery</p><h1>Oracle RMAN·Kubernetes 영속 데이터 복구</h1><p>RMAN 검증·PITR·복구시간 산정, CSI Snapshot·PVC·다중 저장소 정합성.</p></header><div class="layout"><nav class="toc"><strong>18장 2부 목차</strong><a href="#s7">18.7 Oracle RMAN 백업 구성과 복구 원리</a><a href="#s8">18.8 운영 영향이 낮은 RMAN 조회·검증</a><a href="#s9">18.9 복구시간을 측정하는 계산 예제</a><a href="#s10">18.10 PITR·데이터 정합성·외부 효과</a><a href="#s11">18.11 Kubernetes PVC·CSI Snapshot·클러스터 리소스 보호</a><a href="#s12">18.12 DB·파일·큐·검색 복구의 순서</a><hr><a href="chapter18-backup-strategy.html">18장 1부 · 백업 전략</a><a href="chapter18-database-k8s-recovery.html">18장 2부 · DB/K8s 복구</a><a href="chapter18-dr-operations.html">18장 3부 · DR 운영</a><a href="index.html">1~18장 전체 목차</a></nav><main><aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>제품 공식 복구 매뉴얼이 아니다. 모든 수치와 구조는 가상 예시다. 실제 복구는 공식 지원 버전·운영 승인·보안 정책·시험 결과를 따른다.</p></aside><section id="s7"><h2>18.7 Oracle RMAN 백업 구성과 복구 원리</h2>
+<p>Oracle Database를 사용하는 ERP라면 RMAN(Recovery Manager)으로 물리적 백업과 복구를 설계할 수 있다. 제품에서 Oracle 사용 여부, 지원 버전·옵션, 라이선스, 백업 에이전트의 지원 여부는 구축별로 확인한다. <strong>Datafile 백업만 보관하면 사고 직전 상태를 보장할 수 없다.</strong> Control File, SPFILE, Archived Redo Log, TDE Keystore 등 복구 의존성을 별도로 보호해야 한다.</p>
+<div class="scroll"><table><thead><tr><th>대상</th><th>복구에서의 역할</th><th>실무 점검</th></tr></thead><tbody><tr><td>Datafile</td><td>업무 데이터 블록을 복원</td><td>백업 시점·복원 위치·압축/암호화</td></tr><tr><td>Archived Redo Log</td><td>백업 이후 변경을 적용</td><td>시퀀스 연속성·오프사이트 보존</td></tr><tr><td>Control File</td><td>DB 구조와 RMAN 메타데이터</td><td>Autobackup·DBID/복구 Catalog</td></tr><tr><td>SPFILE/PFILE</td><td>인스턴스 설정 재구성</td><td>호환성·경로·기동 파라미터</td></tr><tr><td>TDE Keystore</td><td>암호화 데이터·백업 복호화</td><td>독립 키 보관·복구 승인</td></tr></tbody></table></div>
+<p>ARCHIVELOG 모드와 적절한 백업/로그 보존이 있어야 특정 복구 시점으로 전진할 수 있다. DBMS의 물리 복구와 ERP의 전표·승인·연계 정합성 검증은 별개의 절차다.</p>
+</section>
+<section id="s8"><h2>18.8 운영 영향이 낮은 RMAN 조회·검증</h2>
+<p>DBA가 권한과 실행 시간을 승인한 경우에만 아래 명령을 사용한다. <code>RESTORE ... VALIDATE</code>는 실제 복원 파일을 쓰지 않고 백업을 읽어 검증하지만 저장소와 I/O에 부하가 발생할 수 있다. 대용량 Archive Log 전체 검증은 백업 보존 정책에 따라 상당한 시간이 소요될 수 있다.</p>
+<pre><code>-- SQL*Plus 조회 예시 (권한·버전 확인)
+SELECT name, log_mode, open_mode FROM v$database;
+SELECT * FROM v$recovery_file_dest;
+SELECT thread#, sequence#, first_time, next_time
+  FROM v$archived_log
+ ORDER BY first_time DESC FETCH FIRST 10 ROWS ONLY;
+
+-- RMAN 조회/검증 (I/O 부하를 수반할 수 있음)
+RMAN&gt; SHOW ALL;
+RMAN&gt; LIST BACKUP SUMMARY;
+RMAN&gt; REPORT OBSOLETE;
+RMAN&gt; RESTORE DATABASE VALIDATE;
+RMAN&gt; RESTORE ARCHIVELOG ALL VALIDATE;</code></pre>
+<aside class="warn"><strong>명령 사용 경계</strong><p>RESTORE DATABASE, RECOVER DATABASE, DELETE OBSOLETE, SWITCH, RESETLOGS 등 변경성 명령은 교육용 원고에서 자동 실행 절차로 제공하지 않는다. 실제 복구는 별도 승인된 Runbook과 격리 시험 환경에서 진행한다.</p></aside>
+<p class="sources">공식 근거: <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/bradv/validating-database-files-backups.html">Oracle RMAN Validation</a>.</p>
+</section>
+<section id="s9"><h2>18.9 복구시간을 측정하는 계산 예제</h2>
+<p>백업 세트가 있더라도 읽기 속도·전송 회선·복원 대상 디스크·Redo 적용·DB 기동·업무 검증을 합산해야 RTO를 계산할 수 있다. 압축률과 병렬 채널 수는 실제 시험 결과를 사용한다.</p>
+<pre><code>가상 복구 계획 (제품 성능 보증이 아님)
+복원 대상 DB: 2 TiB = 2,097,152 MiB
+실효 Restore 처리량: 180 MiB/s
+Datafile 복원: 2,097,152 / 180 ≈ 11,651초 ≈ 3시간 14분
+Archived Redo 적용: 45분
+DB 기동/점검: 20분
+ERP·UC 업무 정합성 검증: 40분
+DNS/LB·외부접속 전환: 20분
+합계 (직렬 수행 가정): 약 5시간 19분
+RTO 4시간이라면 NO-GO → 병렬화·대기 인프라·복원 속도 개선 필요</code></pre>
+<div class="scroll"><table><thead><tr><th>단계</th><th>주요 병목</th><th>필수 실측값</th></tr></thead><tbody><tr><td>백업 검색·접근</td><td>Catalog, 암호화 키, 테이프 로드</td><td>사본 접근까지 시간</td></tr><tr><td>Datafile Restore</td><td>저장소 Read, 회선, 대상 Write</td><td>실효 MiB/s</td></tr><tr><td>Redo Recovery</td><td>로그량, CPU·I/O</td><td>적용된 로그 범위/소요</td></tr><tr><td>DB/WAS 기동</td><td>연결 풀, 권한, 설정</td><td>업무 준비 완료 시간</td></tr><tr><td>트래픽 전환</td><td>DNS/SSO/WAF, 외부 API</td><td>사용자 업무 성공 시간</td></tr></tbody></table></div>
+<p>RTO는 DB OPEN 완료 시각이 아니라 <strong>고객이 승인한 핵심 업무를 다시 사용할 수 있는 시각</strong>까지 측정한다.</p>
+</section>
+<section id="s10"><h2>18.10 PITR·데이터 정합성·외부 효과</h2>
+<p>Point-in-Time Recovery(PITR)는 데이터베이스를 특정 시점으로 복구하는 방법이다. 실수로 삭제한 데이터를 되돌리는 데 유용하지만, 사고 이후 발생한 정상 거래도 함께 되돌릴 수 있다. DBA와 업무 책임자는 복구 시점, 유실 가능 거래, 재처리 방법을 공동 승인해야 한다.</p>
+<div class="scroll"><table><thead><tr><th>선택지</th><th>장점</th><th>주요 위험</th></tr></thead><tbody><tr><td>전체 DB PITR</td><td>일관된 DB 복구 시점 설정</td><td>정상 거래까지 되돌아감</td></tr><tr><td>객체/업무 단위 복원</td><td>영향 범위를 줄일 수 있음</td><td>참조 무결성·지원 도구 검증 필요</td></tr><tr><td>업무 정정·재처리</td><td>복구 중단 범위 축소 가능</td><td>중복 처리·감사·승인 필요</td></tr></tbody></table></div>
+<p>ERP가 외부 기관에 전표·문서를 송신하거나 UC가 메시지를 이미 전달했다면 DB만 복원해도 외부 효과는 취소되지 않는다. 중복 송신 방지, 멱등성 키, 보상 처리 절차를 별도 설계한다.</p>
+<aside class="warn"><strong>멀티 스토어 일관성</strong><p>ERP DB, UC 메타데이터 DB, 첨부파일 저장소를 서로 다른 시점으로 복구하면 참조 불일치가 생길 수 있다. 백업 시점의 관계와 이벤트 재처리 규칙을 명시한다.</p></aside>
+</section>
+<section id="s11"><h2>18.11 Kubernetes PVC·CSI Snapshot·클러스터 리소스 보호</h2>
+<p>Deployment/Helm 매니페스트를 Git에 저장해도 PVC의 데이터가 보존되는 것은 아니다. Kubernetes <code>VolumeSnapshot</code>은 CSI 드라이버와 Snapshot Controller가 지원하는 경우에 사용할 수 있는 스토리지 볼륨 시점 복사 API다. <strong>스냅샷 자체가 애플리케이션 정합성이나 원격 보관을 보증하지는 않는다.</strong></p>
+<div class="scroll"><table><thead><tr><th>방식</th><th>보호하는 대상</th><th>Trade-off / 검증</th></tr></thead><tbody><tr><td>GitOps/Helm</td><td>선언형 설정·배포 버전</td><td>PVC 데이터·비밀값·동적 상태는 별도</td></tr><tr><td>CSI VolumeSnapshot</td><td>지원 볼륨의 시점 복사</td><td>Driver 지원, 스냅샷 삭제 정책, 원격 복제</td></tr><tr><td>파일 기반 볼륨 백업</td><td>Pod가 마운트한 파일 데이터</td><td>대용량 DB 파일의 일관성·성능</td></tr><tr><td>DB Native Backup</td><td>DB 트랜잭션·Redo</td><td>첨부파일·K8s 리소스 미포함</td></tr><tr><td>Velero 등 리소스 백업</td><td>K8s API 오브젝트·선택된 PV</td><td>CRD/API 호환성·StorageClass·복원 시험</td></tr></tbody></table></div>
+<p>복구 환경에서는 네임스페이스와 Secret을 복원할 수 있더라도 StorageClass와 CSI 드라이버가 다르면 PVC가 Bound 되지 않을 수 있다. 새 클러스터 복원 시험에서 이 차이를 반드시 검증한다.</p>
+<p class="sources">공식 근거: <a href="https://kubernetes.io/docs/concepts/storage/volume-snapshots/">Kubernetes Volume Snapshots</a> · <a href="https://velero.io/docs/main/file-system-backup/">Velero File System Backup</a>.</p>
+</section>
+<section id="s12"><h2>18.12 DB·파일·큐·검색 복구의 순서</h2>
+<p>여러 저장소를 사용하는 시스템에서는 DB가 살아난 뒤에도 메시지 큐가 오래된 데이터를 재처리하거나 첨부파일 메타데이터가 맞지 않아 오류가 날 수 있다. 복구 순서는 시스템 의존성·정합성·외부 효과를 함께 고려한다.</p>
+<div class="scroll"><table><thead><tr><th>순서(가상)</th><th>검증 대상</th><th>실패 시 판단</th></tr></thead><tbody><tr><td>1. 쓰기 경로 격리</td><td>운영·DR 중복 쓰기 방지</td><td>Fencing 완료 전 서비스 개방 금지</td></tr><tr><td>2. 복구 가능 시점 결정</td><td>DB 로그·파일 사본·메시지 오프셋</td><td>RPO 재평가 및 업무 승인</td></tr><tr><td>3. DB·원본 파일 복원</td><td>트랜잭션·메타데이터 참조</td><td>누락 파일·거래 목록 확보</td></tr><tr><td>4. 큐·검색·캐시 재구성</td><td>멱등성·재전송·인덱스 재생성</td><td>중복 전송·불일치 차단</td></tr><tr><td>5. AP/UC 기동</td><td>Readiness·인증·연계 API</td><td>서비스 노출 전 검증</td></tr><tr><td>6. 업무·외부접속 검증</td><td>로그인·조회·저장·파일·모바일</td><td>Go/No-Go 승인</td></tr></tbody></table></div>
+<aside class="note"><strong>기술적 부채</strong><p>백업 성공 알림만 운영 지표로 삼고 복원 시험을 하지 않으면 복구 소요시간과 데이터 일관성에 대한 근거가 없다. 백업 검증, 실제 복원, 업무 검증을 별도 단계로 운영한다.</p></aside>
+</section><nav class="chapter-nav"><a href="chapter18-backup-strategy.html">← 18장 1부</a><a href="chapter18-dr-operations.html">18장 3부 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 18장 2부 · 2026-10-29 · 독립 공개 교육용 원고</footer></body></html>
