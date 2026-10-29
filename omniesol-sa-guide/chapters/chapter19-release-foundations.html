@@ -1,0 +1,65 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 19장 1부: 패키지·환경·의존성·배포 파일 범위를 먼저 확정해야 안정적인 릴리스가 가능하다."><title>19장 1부 변경관리·지원 Matrix·배포 경계 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 전체 목차</a><p><span class="tag">19장 · 1/3부</span> Release · Patch · Upgrade · Change Management</p><h1>변경관리·지원 Matrix·배포 경계</h1><p>패키지·환경·의존성·배포 파일 범위를 먼저 확정해야 안정적인 릴리스가 가능하다.</p></header>
+<div class="layout"><nav class="toc"><strong>19장 1부 목차</strong><a href="#s1">19.1 변경의 유형과 위험 등급</a><a href="#s2">19.2 지원 Matrix와 버전 BOM</a><a href="#s3">19.3 변경 흐름과 의존성 그래프</a><a href="#s4">19.4 디렉터리 기반 배포의 위험</a><a href="#s5">19.5 승인 Manifest와 파일 무결성</a><a href="#s6">19.6 개발·운영 배포 경로 분리와 사전 승인</a><hr><a href="chapter19-release-foundations.html">19장 1부 · 변경관리·지원 Matrix·배포 경계</a><a href="chapter19-patch-upgrade.html">19장 2부 · 플랫폼 패치·DB 마이그레이션·무중단 배포</a><a href="chapter19-release-runbook.html">19장 3부 · 릴리스 Runbook·롤백·운영 인수</a><a href="index.html">1~19장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>OmniEsol 제품의 공식 지원·설치·업그레이드 매뉴얼이 아니다. 사례와 버전 표기는 가상이다. 실제 운영 변경은 공식 호환 Matrix, 제품 지원 정책, 고객 보안 기준, 업무 승인, 사전 복구 시험을 따른다. 고객 식별정보·인증정보는 포함하지 않는다.</p></aside>
+<section id="s1"><h2>19.1 변경의 유형과 위험 등급</h2>
+<p>SA가 운영 릴리스에서 먼저 판단할 것은 “어떤 명령을 실행하는가”가 아니라 <strong>변경 범위·가역성·업무 영향</strong>이다. 동일한 패치라도 정적 파일 교체와 DB 스키마 변경의 복구 난도는 다르다. 본 장은 특정 OmniEsol 버전의 공식 절차가 아니라, ERP·UC 현장에서 활용할 수 있는 독립 교육용 변경관리 모델이다.</p>
+<div class="scroll"><table><thead><tr><th>변경 유형</th><th>대표 작업</th><th>주요 위험</th><th>기본 검증</th></tr></thead><tbody><tr><td>설정 변경</td><td>TLS, Reverse Proxy, WAS Pool, DNS</td><td>서비스 접근·연계 실패</td><td>구문·라우팅·업무 회귀</td></tr><tr><td>애플리케이션 배포</td><td>WEB/WAS 패키지, UC 이미지</td><td>API 계약 불일치, 세션 중단</td><td>버전·업무·성능</td></tr><tr><td>DB 변경</td><td>DDL, 인덱스, 데이터 이행</td><td>잠금·정합성·복구 난도</td><td>DBA 승인·백업·전후 비교</td></tr><tr><td>플랫폼 패치</td><td>RHEL, JDK, DBMS, K8s</td><td>지원성·재기동·드라이버 충돌</td><td>호환성 Matrix·복구 시험</td></tr><tr><td>보안 긴급 변경</td><td>취약점 완화, 접근제어</td><td>오탐·업무 차단</td><td>허용/거부 테스트·예외 만료</td></tr></tbody></table></div>
+<p>운영 위험 등급은 예시로 낮음(L1), 보통(L2), 높음(L3), 긴급(L4)으로 분류할 수 있다. 실제 등급 명칭과 승인 권한은 고객의 변경관리 정책을 우선한다. 긴급 변경도 사후 기록과 만료일을 생략하지 않는다.</p>
+<aside class="warn"><strong>핵심 기준</strong><p>‘서버 한 대만 수정’은 저위험의 근거가 아니다. 단일 DB 스키마, 공통 인증서, 공통 Proxy는 한 대의 변경으로 모든 서비스를 중단시킬 수 있다.</p></aside>
+</section>
+<section id="s2"><h2>19.2 지원 Matrix와 버전 BOM</h2>
+<p>지원 Matrix는 “기동된다”는 경험과 “제품 제조사·DBMS·OS가 공식적으로 지원한다”는 사실을 분리하는 표다. 개발에서 실행된 조합도 운영의 장기 패치·장애 지원을 보장하지 않는다. 설치·업그레이드 전에 <strong>버전 BOM(Bill of Materials)</strong>과 근거 문서를 확보한다.</p>
+<div class="scroll"><table><thead><tr><th>계층</th><th>기록할 버전·속성</th><th>승인 근거</th></tr></thead><tbody><tr><td>제품 패키지</td><td>ERP/UC 모듈 버전·빌드·패치 레벨</td><td>제품 릴리스 노트·지원 Matrix</td></tr><tr><td>OS</td><td>RHEL Major/Minor, Kernel, 필수 RPM</td><td>공식 지원 OS 목록</td></tr><tr><td>WEB/WAS</td><td>WebtoB/JEUS 버전, JDK, 커넥터</td><td>벤더 호환성·지원 정책</td></tr><tr><td>DBMS</td><td>Oracle/Tibero 등 DBMS·클라이언트 버전</td><td>DBMS·제품 지원 문서·라이선스</td></tr><tr><td>Kubernetes</td><td>Control Plane, Node, CNI, CSI, Ingress</td><td>배포/업그레이드 지원 정책</td></tr><tr><td>외부 연계</td><td>SSO, 메일, API, TLS, 모바일 클라이언트</td><td>API 계약·인증서·통합시험</td></tr></tbody></table></div>
+<pre><code>가상 BOM 예시 (지원 여부 미확정)
+ERP build: release-2026.10.x
+UC build: release-2026.10.x
+OS: [공식 검증 버전]
+WEB/WAS/JDK: [검증된 조합]
+DBMS/Driver: [검증된 조합]
+K8s/CNI/CSI/Ingress: [검증된 조합]
+Source / Build ID / SHA-256: [검증 가능한 값]
+Support evidence / Owner / Date: [문서·담당자·일자]</code></pre>
+<p>예제의 문자열은 가상 식별자이며 공식 버전이나 설치 권장값이 아니다. 지원 Matrix가 불명확하면 임의로 상위 버전을 선택하지 말고 제품 기술지원의 확인 결과를 승인 기록에 첨부한다.</p>
+</section>
+<section id="s3"><h2>19.3 변경 흐름과 의존성 그래프</h2>
+<p>디렉터리 배포는 파일 경로를 기준으로 묶기 쉽지만, 실제 배포 순서는 코드 의존성과 서비스 계약에 의해 결정된다. WEB 정적 리소스, API, DB DDL, UC 연계가 같은 릴리스에 포함될 때는 의존성 DAG(Directed Acyclic Graph)를 먼저 그린다. 순환 의존성이 있으면 릴리스 단위를 재설계해야 한다.</p>
+<figure class="diagram"><div class="flow"><div class="node">릴리스 요구사항 · 영향 파일 · API/DB 계약 확정</div><div class="arrow">↓</div><div class="node">DB 호환 확장(필요한 경우) · 기존 버전 동작 확인</div><div class="arrow">↓</div><div class="node">하위 호환 API/WAS 배포 · 계약 시험</div><div class="arrow">↓</div><div class="node">WEB/UC 소비자 기능 활성화 · 업무 시험</div><div class="arrow">↓</div><div class="node">구버전 사용 종료 확인 후 별도 정리(Contract)</div></div><figcaption>그림 19-1. 예시 릴리스 의존성 — 호환 가능한 DB 확장 후 신·구 API 공존</figcaption></figure>
+<div class="scroll"><table><thead><tr><th>의존성</th><th>잘못된 순서의 결과</th><th>검증 방법</th></tr></thead><tbody><tr><td>WEB JS → API</td><td>신규 JS가 구 API 필드를 요구</td><td>신·구 버전 API 계약 테스트</td></tr><tr><td>WAS → DB</td><td>코드가 존재하지 않는 컬럼 참조</td><td>스키마 호환 시험</td></tr><tr><td>UC → ERP 인증</td><td>토큰/Redirect 불일치</td><td>SSO 갱신·로그아웃 시험</td></tr><tr><td>Proxy → WEB/WAS</td><td>Host/Path 재작성 오류</td><td>내부·외부 요청 추적</td></tr><tr><td>Batch → DB</td><td>스키마 변경 중 배치 중복/실패</td><td>배치 정지·재개·재처리 기준</td></tr></tbody></table></div>
+<p>배포 순서와 서비스 시작·중지 순서는 같지 않을 수 있다. 시스템별 롤링 가능 여부와 무중단 조건은 반드시 별도 검증한다.</p>
+</section>
+<section id="s4"><h2>19.4 디렉터리 기반 배포의 위험</h2>
+<p>가상 사례: ERP 배포 도구가 변경 파일의 의존성을 계산해 동일 디렉터리의 관련 파일을 일괄 포함한다. 그중 고객별 전용 개발 파일이 아직 검증되지 않았는데도 공통 패키지에 포함된다. 문제는 “개발자가 실수했다”가 아니라 <strong>릴리스 대상 파일의 승인 경계가 없다</strong>는 점이다.</p>
+<div class="scroll"><table><thead><tr><th>방식</th><th>장점</th><th>한계·기술 부채</th></tr></thead><tbody><tr><td>디렉터리 전체 배포</td><td>도입이 빠르고 기존 도구 변경 적음</td><td>미승인 파일·개발 중 파일 포함 위험</td></tr><tr><td>차단 목록(denylist)</td><td>단기 예외 적용이 쉬움</td><td>새 파일·이름 변경에 취약, 기본 허용</td></tr><tr><td>승인 목록(allowlist)</td><td>실제 릴리스 파일을 명시적으로 제한</td><td>초기 목록·의존성 유지 비용</td></tr><tr><td>Manifest + 해시 + 검증</td><td>재현성·추적성·변경 검증 향상</td><td>도구 연동과 운영 절차 개선 필요</td></tr></tbody></table></div>
+<aside class="note"><strong>최소 변경 대안</strong><p>기존 디렉터리 복사 방식은 유지하되, 배포 전 승인 Manifest에 포함된 파일만 선택하고, Manifest 밖의 추가 파일은 기본 차단(fail closed)한다. 의존성으로 자동 확장된 파일도 별도 승인 대상이다.</p></aside>
+</section>
+<section id="s5"><h2>19.5 승인 Manifest와 파일 무결성</h2>
+<p>Manifest는 릴리스 파일의 계약서다. 파일 경로뿐 아니라 목적, 버전, 해시, 의존성, 소유자, 승인 상태를 포함한다. 예외 필터만으로 해결할 경우 “왜 제외되었는가”와 “어떤 버전을 운영에 배포했는가”가 남지 않는 기술적 부채가 생긴다.</p>
+<pre><code>release_id: REL-EXAMPLE-019
+product: ERP
+target_environment: PROD
+source_revision: "git-commit-placeholder"
+artifact_digest: "sha256:&lt;검증된 값&gt;"
+approved_files:
+  - path: "web/assets/app.js"
+    sha256: "&lt;빌드된 파일의 SHA-256&gt;"
+    owner: "frontend-team"
+  - path: "was/modules/invoice.jar"
+    sha256: "&lt;빌드된 파일의 SHA-256&gt;"
+    owner: "app-team"
+excluded_files:
+  - "was/customer-extension/draft/*"
+dependency_review: "APPROVED"
+security_review: "APPROVED"
+change_ticket: "CHG-EXAMPLE-019"
+rollback_artifact: "REL-EXAMPLE-018"</code></pre>
+<ul><li>경로는 정규화하고 <code>..</code>, 절대경로, 심볼릭 링크 탈출을 차단한다.</li><li>패키지 해시와 실제 배포 직전 파일 해시를 비교한다.</li><li>중복 경로·대소문자 충돌·기존 파일 덮어쓰기를 검출한다.</li><li>Manifest 밖 파일은 자동 추가하지 않고 별도 승인 요청으로 분리한다.</li><li>운영 배포 계정에는 개발 브랜치·테스트 산출물에 대한 직접 쓰기 권한을 주지 않는다.</li></ul>
+<p>SHA-256은 동일성 검증에 유용하지만 신뢰성을 단독으로 보장하지 않는다. 서명된 빌드 출처, 접근 통제, CI 로그, SBOM 등 공급망 검증을 병행한다.</p>
+</section>
+<section id="s6"><h2>19.6 개발·운영 배포 경로 분리와 사전 승인</h2>
+<p>기존 배포 시스템에 예외 필터가 있고 신규 배포 시스템에는 없다면 두 시스템을 병행하는 과도기 방안을 검토할 수 있다. 다만 개발용과 운영용 시스템을 복제해 영구 유지하면 정책·패치·감사 기능이 서로 달라지는 문제가 생긴다.</p>
+<div class="scroll"><table><thead><tr><th>대안</th><th>장점</th><th>단점</th><th>권고</th></tr></thead><tbody><tr><td>개발/운영 배포 도구 2개 병행</td><td>긴급 격리와 기존 예외 기능 활용</td><td>설정 Drift·이중 유지보수·배포 추적 분산</td><td>기한을 둔 임시 방안</td></tr><tr><td>단일 도구 + 환경별 승인 정책</td><td>공통 감사·정책 관리, 운영 일관성</td><td>정책 엔진 추가 개발 필요</td><td>목표 아키텍처</td></tr><tr><td>운영 승인 Manifest만 추가</td><td>기존 디렉터리 배포 최소 수정</td><td>의존성·정합성 검증 추가 필요</td><td>단기 우선 개선</td></tr></tbody></table></div>
+<figure class="diagram"><div class="flow"><div class="node">Source → Build → Test → 고정된 Artifact + SBOM</div><div class="arrow">↓</div><div class="node">의존성 분석 → 승인 Manifest → 보안·업무 검토</div><div class="arrow">↓</div><div class="node">STAGE 동일 Artifact 검증 + Dry-run + 해시 확인</div><div class="arrow">↓</div><div class="node">운영 승인 Gate → 점진적 배포 → 업무/SLO 검증</div></div><figcaption>그림 19-2. 권장 릴리스 경로 — 승인되지 않은 파일은 운영으로 진입하지 않는다</figcaption></figure>
+<aside class="note"><strong>Go/No-Go</strong><p>공식 지원 조합, 전체 변경 파일 목록, 의존성 승인, 운영 복구점, 담당자, 업무 중단 범위, STAGE 결과가 없으면 배포를 시작하지 않는다.</p></aside>
+</section><nav class="chapter-nav"><a href="chapter18-dr-operations.html">← 18장 복구 설계</a><a href="chapter19-patch-upgrade.html">19장 다음 부 →</a></nav>
+</main></div><footer>OmniEsol SA 실전 가이드 · 19장 1부 · 2026-10-30 · 독립 공개 교육용 원고</footer></body></html>

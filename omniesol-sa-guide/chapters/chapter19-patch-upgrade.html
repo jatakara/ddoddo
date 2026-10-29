@@ -1,0 +1,61 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 19장 2부: OS·WAS·DB·Kubernetes 업그레이드의 위험을 구분하고 서비스 연속성 조건을 검증한다."><title>19장 2부 플랫폼 패치·DB 마이그레이션·무중단 배포 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 전체 목차</a><p><span class="tag">19장 · 2/3부</span> Release · Patch · Upgrade · Change Management</p><h1>플랫폼 패치·DB 마이그레이션·무중단 배포</h1><p>OS·WAS·DB·Kubernetes 업그레이드의 위험을 구분하고 서비스 연속성 조건을 검증한다.</p></header>
+<div class="layout"><nav class="toc"><strong>19장 2부 목차</strong><a href="#s7">19.7 OS·JDK·WEB/WAS 패치 순서</a><a href="#s8">19.8 WEB/WAS와 Reverse Proxy의 롤링 교체</a><a href="#s9">19.9 Oracle/Tibero DB 변경과 Expand–Migrate–Contract</a><a href="#s10">19.10 Kubernetes Deployment 롤링과 가용성</a><a href="#s11">19.11 ERP·UC 연계와 계약 호환성</a><a href="#s12">19.12 플랫폼 업그레이드의 확장성·보안 판단</a><hr><a href="chapter19-release-foundations.html">19장 1부 · 변경관리·지원 Matrix·배포 경계</a><a href="chapter19-patch-upgrade.html">19장 2부 · 플랫폼 패치·DB 마이그레이션·무중단 배포</a><a href="chapter19-release-runbook.html">19장 3부 · 릴리스 Runbook·롤백·운영 인수</a><a href="index.html">1~19장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>OmniEsol 제품의 공식 지원·설치·업그레이드 매뉴얼이 아니다. 사례와 버전 표기는 가상이다. 실제 운영 변경은 공식 호환 Matrix, 제품 지원 정책, 고객 보안 기준, 업무 승인, 사전 복구 시험을 따른다. 고객 식별정보·인증정보는 포함하지 않는다.</p></aside>
+<section id="s7"><h2>19.7 OS·JDK·WEB/WAS 패치 순서</h2>
+<p>OS와 런타임 패치는 단순한 보안 패치가 아니다. 커널 변경은 재부팅을 요구할 수 있고, JDK와 WAS 변경은 애플리케이션의 클래스 로딩·TLS·JDBC·GC 동작을 바꿀 수 있다. 제품 지원 Matrix와 릴리스 노트의 Known Issue를 확인한 후 비운영 환경에서 먼저 검증한다.</p>
+<div class="scroll"><table><thead><tr><th>대상</th><th>사전 확인</th><th>적용 후 확인</th><th>롤백 주의</th></tr></thead><tbody><tr><td>RHEL/Kernel</td><td>패키지 목록·커널·드라이버·서브스크립션</td><td>부팅·NIC·스토리지·SELinux·서비스</td><td>패키지 다운그레이드만으로 상태 완전 복원 불가</td></tr><tr><td>JDK</td><td>WAS/애플리케이션 호환성, 인증서·Cipher</td><td>JVM 기동·GC·JDBC·TLS·업무 회귀</td><td>구 JDK와 배포물 보존</td></tr><tr><td>WebtoB/JEUS</td><td>지원 버전·설정 diff·모듈 호환성</td><td>구문 검증·연결 풀·Proxy·세션</td><td>설정 백업과 데이터 의존성 분리</td></tr><tr><td>Proxy/WAF</td><td>HTTP/2, SSE, WebSocket, Timeout, URI 정책</td><td>정상 업무·장시간 연결·보안 차단</td><td>오탐 해제와 무분별한 모두 허용 구분</td></tr></tbody></table></div>
+<pre><code># 읽기 전용 변경 전 Baseline 예시 (RHEL 계열)
+cat /etc/os-release
+uname -r
+rpm -qa | sort
+dnf history list
+systemctl --failed
+ss -lnt
+# 승인된 환경에서 결과를 보안 저장소에 보관; 계정/비밀정보 제외</code></pre>
+<p>운영 환경에서는 벤더 공식 절차와 유지보수 창을 따르며, 패키지 일괄 업데이트 또는 자동 재부팅을 승인 없이 수행하지 않는다.</p>
+</section>
+<section id="s8"><h2>19.8 WEB/WAS와 Reverse Proxy의 롤링 교체</h2>
+<p>WEB/WAS가 2대 이상이면 순차 교체를 고려할 수 있다. 그러나 DB·공통 세션 저장소·인증서·Proxy 라우팅이 단일 장애점이면 ‘AP 2대’만으로 무중단을 보장하지 않는다. 긴 요청, 파일 업로드, 배치, WebSocket, SSE 등 연결 유형별 종료 정책을 정한다.</p>
+<figure class="diagram"><div class="flow"><div class="node">대상 노드 신규 요청 차단 / 기존 연결 Drain</div><div class="arrow">↓</div><div class="node">잔여 세션·배치 확인 → 패치·설정 검증</div><div class="arrow">↓</div><div class="node">Health + 실제 업무 + SLO 확인 → LB 복귀</div><div class="arrow">↓</div><div class="node">다음 노드 반복 → 전체 서비스 계약 검증</div></div><figcaption>그림 19-3. WEB/WAS 롤링 배포의 논리 흐름</figcaption></figure>
+<div class="scroll"><table><thead><tr><th>기능</th><th>검증 조건</th></tr></thead><tbody><tr><td>세션</td><td>Sticky/공유 세션 정책에 따른 재로그인·세션 손실</td></tr><tr><td>장시간 요청</td><td>파일 업로드·보고서·배치의 Drain/Timeout</td></tr><tr><td>TLS/Proxy</td><td>Host, X-Forwarded-*, SNI, Rewrite, HTTP/2</td></tr><tr><td>SSE/WebSocket</td><td>연결 끊김 시 재연결·이벤트 중복/유실 처리</td></tr><tr><td>DB Pool</td><td>교체 중 연결 폭증·Lock·Failover 영향</td></tr></tbody></table></div>
+<aside class="warn"><strong>롤링의 한계</strong><p>1대 구성에서는 Drain 대상이 없어 중단이 발생할 수 있다. 무중단 요구가 있다면 가용 노드, LB 정책, 배포 중 임시 자원, 애플리케이션 상태 외부화가 필요하다.</p></aside>
+</section>
+<section id="s9"><h2>19.9 Oracle/Tibero DB 변경과 Expand–Migrate–Contract</h2>
+<p>DB 스키마 변경은 애플리케이션 바이너리 교체와 다르다. 컬럼 삭제·타입 변경·대량 UPDATE는 과거 버전 코드의 실행을 불가능하게 만들 수 있다. 안전한 일반 패턴은 <strong>Expand → Migrate → Contract</strong>다. 실제 지원 범위와 DDL 동작은 해당 DBMS 버전의 공식 문서를 확인한다.</p>
+<div class="scroll"><table><thead><tr><th>단계</th><th>예시</th><th>기술 검증</th></tr></thead><tbody><tr><td>Expand</td><td>기존 컬럼을 유지한 채 신규 nullable 컬럼 추가</td><td>신·구 앱 모두 정상</td></tr><tr><td>Migrate</td><td>배치 단위 Backfill, 읽기/쓰기 경로 점진 전환</td><td>Lock·Redo·Replication Lag·검증 건수</td></tr><tr><td>Contract</td><td>구버전 사용 종료 후 이전 컬럼 제거</td><td>승인된 별도 릴리스·복구계획</td></tr></tbody></table></div>
+<pre><code>가상 데이터 이행 통제표
+변경 ID: DB-EXAMPLE-019
+영향 테이블/인덱스: [스키마 소유자 검토]
+변경 전 row count / checksum: [승인된 집계]
+Batch 크기·중단 조건: [부하 시험 근거]
+대기 이벤트 / Redo / Undo / Archive 여유: [실측]
+애플리케이션 호환 버전: old=N, new=N+1
+데이터 복원 전략: [RMAN/PITR/논리 역변환 검증]
+정합성 서명: [DBA + 업무 책임자]</code></pre>
+<p>Oracle DDL의 암묵적 Commit, 데이터 손실 가능성, 복구 목표를 고려한다. Guaranteed Restore Point는 전제조건과 FRA 공간이 필요하며 DB 전체 복구 시점을 다루므로, 일반적인 애플리케이션 패치 롤백 버튼처럼 취급하면 안 된다.</p>
+<aside class="warn"><strong>비가역성 주의</strong><p>과거 WAS 버전으로 되돌려도 이미 삭제·변환된 데이터가 자동으로 복원되지는 않는다. DB 마이그레이션이 포함되면 ‘바이너리 롤백’과 ‘데이터 복구’의 승인 절차를 분리한다.</p></aside>
+</section>
+<section id="s10"><h2>19.10 Kubernetes Deployment 롤링과 가용성</h2>
+<p>Deployment의 RollingUpdate는 새 Pod를 단계적으로 준비하고 이전 Pod를 교체하는 기능이다. 무중단을 보장하려면 준비된 Replica 수, 자원 여유, readinessProbe, 서비스 연결, 앱 호환성이 모두 충족되어야 한다. Pod가 Ready여도 ERP/UC의 실제 거래 성공 여부는 별도로 검증한다.</p>
+<pre><code># 승인된 읽기 전용 상태 점검 예시
+kubectl -n example-uc get deployment
+kubectl -n example-uc get pods -o wide
+kubectl -n example-uc get endpointslices
+kubectl -n example-uc rollout history deployment/example-api
+kubectl -n example-uc rollout status deployment/example-api --timeout=5m
+kubectl -n example-uc describe deployment/example-api</code></pre>
+<div class="scroll"><table><thead><tr><th>설정/기능</th><th>목적</th><th>실패 모드</th></tr></thead><tbody><tr><td>replicas >= 2</td><td>배포 중 서비스 여유</td><td>1 Replica만으로 무중단 보장 불가</td></tr><tr><td>maxUnavailable=0</td><td>준비된 기존 Pod 최소 수 유지</td><td>Surge 용량 부족 시 배포 정체</td></tr><tr><td>maxSurge=1</td><td>신규 Pod 임시 추가</td><td>CPU·메모리·Pod/IP 부족</td></tr><tr><td>readinessProbe</td><td>준비되지 않은 Pod로의 트래픽 방지</td><td>피상적 200 응답으로 조기 Ready</td></tr><tr><td>PodDisruptionBudget</td><td>자발적 중단 제약</td><td>배포 자체의 모든 가용성 위험을 해결하지 않음</td></tr><tr><td>revisionHistoryLimit</td><td>이전 Pod 템플릿 보존</td><td>DB·PVC·Config 외부 상태는 복원 안 됨</td></tr></tbody></table></div>
+<p>공식 Kubernetes 문서는 Deployment 롤백이 Pod 템플릿 변경 이력에 기반한다고 설명한다. DB 스키마, 영속 데이터, 외부 시스템 상태는 함께 되돌아가지 않는다.</p>
+</section>
+<section id="s11"><h2>19.11 ERP·UC 연계와 계약 호환성</h2>
+<p>ERP와 UC가 다른 배포 주기로 운영되면 구버전과 신버전이 일정 시간 공존한다. 이때 HTTP API, 토큰, 메시지 스키마, 파일 URL, SSO Redirect가 호환되지 않으면 두 서비스 모두 정상 상태인데 일부 기능만 실패한다.</p>
+<div class="scroll"><table><thead><tr><th>계약</th><th>배포 전 검증</th><th>배포 후 증상</th></tr></thead><tbody><tr><td>API 필드/URI</td><td>구/신 소비자·공급자 계약 테스트</td><td>404·400·역직렬화 오류</td></tr><tr><td>SSO/토큰</td><td>서명·Audience·쿠키·만료·Redirect</td><td>로그인 반복·권한 오류</td></tr><tr><td>모바일 URL</td><td>내부/외부 DNS·Proxy·호출 도메인</td><td>특정 망에서 메뉴만 실패</td></tr><tr><td>비동기 메시지</td><td>이벤트 버전·멱등성·재처리</td><td>중복 처리·지연·유실</td></tr><tr><td>파일/첨부</td><td>권한·서명 URL·저장소 매핑</td><td>다운로드 실패·메타데이터 불일치</td></tr></tbody></table></div>
+<p>호환성이 불명확한 경우 기능 플래그로 신규 호출을 비활성화한 채 공급자 API를 먼저 배포하고, 계약 시험 이후 소비자 기능을 개방한다. 플래그 역시 만료일과 소유자가 필요하다.</p>
+</section>
+<section id="s12"><h2>19.12 플랫폼 업그레이드의 확장성·보안 판단</h2>
+<p>패치와 업그레이드는 취약점 감소뿐 아니라 운영 부채를 줄이는 기회다. 다만 대규모 일괄 교체는 원인 추적이 어렵다. 컴포넌트별 Change Set과 Baseline을 유지하고, 단일 실패 지점부터 제거하는 순서를 설계한다.</p>
+<div class="scroll"><table><thead><tr><th>의사결정</th><th>장점</th><th>비용/위험</th></tr></thead><tbody><tr><td>인플레이스 업데이트</td><td>장비/구성 변경 적음</td><td>원복 어려움·환경 Drift</td></tr><tr><td>블루/그린</td><td>검증된 신규 환경으로 트래픽 전환</td><td>이중 자원·데이터 동기화 필요</td></tr><tr><td>카나리/점진적</td><td>영향을 제한해 지표 기반 전환</td><td>세션·버전 혼재·트래픽 분리 복잡</td></tr><tr><td>전체 중단 창</td><td>정합성/변경 경계 단순</td><td>업무 중단·복구 창 확보 필요</td></tr></tbody></table></div>
+<ul><li>보안: 이미지/패키지 서명, SBOM, 취약점, Secret·관리자 권한, 감사 로그를 검토한다.</li><li>확장성: 배포 중 N+1, DB Pool, 배치 피크, K8s Surge 자원을 확인한다.</li><li>운영성: 승인·원복·관찰·고객 공지 담당자를 명시한다.</li><li>데이터: 업그레이드 후에도 이전 DB·백업 도구로 복구 가능한지 별도 검증한다.</li></ul>
+</section><nav class="chapter-nav"><a href="chapter19-release-foundations.html">← 19장 이전 부</a><a href="chapter19-release-runbook.html">19장 다음 부 →</a></nav>
+</main></div><footer>OmniEsol SA 실전 가이드 · 19장 2부 · 2026-10-30 · 독립 공개 교육용 원고</footer></body></html>
