@@ -1,0 +1,67 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 20장 2부: 지표를 수집하는 데서 끝내지 않고 사용자 영향 중심의 경보와 장애 진단으로 연결한다."><title>20장 2부 서비스 SLO·알람·장애 상관분석 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 전체 목차</a><p><span class="tag">20장 · 2/3부</span> Observability · SLO · Safe Automation</p><h1>서비스 SLO·알람·장애 상관분석</h1><p>지표를 수집하는 데서 끝내지 않고 사용자 영향 중심의 경보와 장애 진단으로 연결한다.</p></header>
+<div class="layout"><nav class="toc"><strong>20장 2부 목차</strong><a href="#s7">20.7 SLI·SLO·SLA와 오류 예산</a><a href="#s8">20.8 서비스별 SLO Matrix</a><a href="#s9">20.9 Prometheus Recording Rule과 Alert Rule 예시</a><a href="#s10">20.10 Alert Fatigue와 Burn Rate</a><a href="#s11">20.11 장애 상관분석: SSE 스트리밍 중단 사례</a><a href="#s12">20.12 Dashboard·경보 수용 시험</a><hr><a href="chapter20-observability-foundations.html">20장 1부 · 관측성 설계와 Telemetry 표준</a><a href="chapter20-slo-alerting.html">20장 2부 · 서비스 SLO·알람·장애 상관분석</a><a href="chapter20-safe-automation.html">20장 3부 · 승인 기반 자동 점검·진단·복구</a><a href="index.html">1~20장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>이 장은 OmniEsol 공식 지원·설치·보안 정책을 대신하지 않는다. 모든 수치·서비스 이름·지표 이름은 교육용 가상 예시다. 실제 구축 시 제품 지원 Matrix, 고객 보안·개인정보 정책, 변경 승인 및 검증을 우선한다. 운영 계정·내부 주소·고객 정보는 포함하지 않는다.</p></aside><section id="s7"><h2>20.7 SLI·SLO·SLA와 오류 예산</h2>
+<p>SLI(Service Level Indicator)는 측정값, SLO(Service Level Objective)는 내부 목표, SLA(Service Level Agreement)는 계약상의 약속이다. 같은 가용성이라도 “HTTP 요청 성공”과 “사용자가 저장을 완료”는 다른 SLI이므로 분모·제외 조건을 먼저 합의해야 한다.</p>
+<pre><code>SLI(업무 저장 성공률) =
+  성공한 유효 업무 저장 건수 / 전체 유효 업무 저장 건수 × 100
+
+30일 SLO 99.9%의 단순 시간 기준 오류 예산:
+  30 × 24 × 60 × (1 - 0.999) = 43.2분
+
+주의: 요청 기반 SLO의 오류 예산은 '분'이 아니라
+      기간 내 유효 요청 건수 × (1 - 목표 성공률)로 계산</code></pre>
+<div class="scroll"><table><thead><tr><th>예시</th><th>계산</th><th>의미</th></tr></thead><tbody><tr><td>30일 요청 10,000건, SLO 99.9%</td><td>허용 실패 10건</td><td>오류 예산은 10건</td></tr><tr><td>실제 실패 15건</td><td>실제 성공률 99.85%</td><td>예산 150% 사용, 목표 미달</td></tr><tr><td>30일 시간 기반 99.9%</td><td>43.2분</td><td>24시간 동일 가중치일 때의 단순 예시</td></tr></tbody></table></div>
+<p>외부 인터넷 장애, 계획 점검, 클라이언트 오류 등 어떤 이벤트를 SLI에서 제외할지는 사전에 정의한다. 장애 후 임의로 분모를 조정하면 지표 신뢰가 사라진다.</p>
+</section>
+<section id="s8"><h2>20.8 서비스별 SLO Matrix</h2>
+<div class="scroll"><table><thead><tr><th>서비스</th><th>SLI 정의(예시)</th><th>가상 SLO</th><th>측정 주의</th></tr></thead><tbody><tr><td>ERP 로그인</td><td>유효 로그인 시도 중 인증 완료</td><td>30일 99.9%</td><td>인증 실패(잘못된 암호)와 시스템 오류 구분</td></tr><tr><td>ERP 저장</td><td>업무 유효성 통과 요청 중 Commit 성공</td><td>30일 99.95%</td><td>업무 규칙에 따른 거절은 별도 분류</td></tr><tr><td>UC 메시지</td><td>수신 확인까지 성공한 메시지 비율</td><td>30일 99.9%</td><td>비동기 전달 지연/중복을 고려</td></tr><tr><td>외부 모바일</td><td>Synthetic 로그인·기능 완료 성공</td><td>30일 99.5%</td><td>측정 지점과 외부 DNS 경로 고정</td></tr></tbody></table></div>
+<p>수치는 권장 기준이 아니라 산식 이해를 위한 가상 목표다. 업무 중요도, 데이터 수집 가능성, 사용자 체감과 운영비를 검토해 승인한다. 저트래픽 업무는 단순 RPS 기반 SLI가 왜곡되므로 Synthetic Test나 업무 이벤트 기반 측정을 병행한다.</p>
+</section>
+<section id="s9"><h2>20.9 Prometheus Recording Rule과 Alert Rule 예시</h2>
+<p>아래는 계측을 구현했다는 가정하에 작성한 <strong>교육용 PromQL 예시</strong>다. <code>erp_http_requests_total</code>은 이 문서에서 정의한 가상 Counter로, 모든 유효 요청은 <code>slo_eligible="true"</code>, 실패는 <code>outcome="error"</code>로 기록한다. 실제 환경에 이 지표가 기본 제공된다는 뜻은 아니다.</p>
+<pre><code># 먼저 집계한 후 비율을 계산한다 (ratio of sums).
+# 5분 실패율: 서비스별 전체 실패 요청 / 전체 유효 요청
+sum(rate(erp_http_requests_total{
+  service="erp",slo_eligible="true",outcome="error"
+}[5m]))
+/
+clamp_min(sum(rate(erp_http_requests_total{
+  service="erp",slo_eligible="true"
+}[5m])), 1e-9)
+
+# 별도 저트래픽 보호 조건(5분 유효 요청 &gt; 100)
+sum(increase(erp_http_requests_total{
+  service="erp",slo_eligible="true"
+}[5m])) &gt; 100
+
+# 경보 후보: 99.9% 목표의 14.4배 burn rate = 실패율 1.44%
+# 위 두 조건을 AND로 결합하고, 실제 다중 윈도 경보는
+# 5m/1h 및 30m/6h 등 단·장기 창을 함께 검증한다.</code></pre>
+<p>모든 요청이 0건이면 실패율 계산은 정상성의 증거가 아니다. 별도 <code>up</code>, Synthetic Test, <code>absent_over_time()</code> 및 Collector 자체 건강 상태로 텔레메트리 결손을 감지한다. Recording Rule은 복잡한 계산을 사전 집계해 대시보드와 경보 부하를 줄일 수 있다.</p>
+</section>
+<section id="s10"><h2>20.10 Alert Fatigue와 Burn Rate</h2>
+<p>CPU 80% 경보를 10개 노드에서 동시에 발생시키면 운영자는 하나의 업무 장애를 10개로 받아들인다. 경보는 서비스 SLO, 사용자 영향, 조치 가능성을 중심으로 그룹화한다. Burn Rate는 허용 오류 예산이 소진되는 속도다. 99.9% SLO의 허용 오류율 0.1%에서 1.44% 오류율이면 14.4배 소진이다.</p>
+<div class="scroll"><table><thead><tr><th>경보 종류</th><th>권장 수신</th><th>판단 기준</th><th>주의</th></tr></thead><tbody><tr><td>Page / P1</td><td>즉시 당직</td><td>핵심 업무 실패·빠른 오류 예산 소진</td><td>한 알람이 실제 조치로 연결되어야 함</td></tr><tr><td>Ticket / P2</td><td>근무시간 대응</td><td>장기적 지연·용량 위험·반복 오류</td><td>과도한 호출 방지</td></tr><tr><td>Informational</td><td>대시보드·일일 보고</td><td>변경 이벤트·경미한 자원 증가</td><td>개별 알람 남발 금지</td></tr><tr><td>Telemetry Missing</td><td>수집 플랫폼 담당</td><td>메트릭/로그/트레이스 공백</td><td>서비스 정상으로 간주 금지</td></tr></tbody></table></div>
+<p>경보 규칙은 서비스별 트래픽과 SLO에 따라 검증한다. 단일 짧은 구간만 보면 순간 오류에 과민하고, 장기 구간만 보면 치명적 장애를 늦게 발견한다.</p>
+</section>
+<section id="s11"><h2>20.11 장애 상관분석: SSE 스트리밍 중단 사례</h2>
+<p>가상의 UC 스트리밍 서비스에서 사용자가 “분석 중”을 본 후 응답을 받지 못했다고 가정한다. HTTP 200은 응답 헤더 수신을 뜻할 수 있으나, 스트림 전체의 완료를 보증하지 않는다. WAF·L7·Proxy·업스트림·클라이언트 중 어느 구간이 끊겼는지 추적해야 한다.</p>
+<div class="scroll"><table><thead><tr><th>관찰 위치</th><th>수집 증거</th><th>해석 주의</th></tr></thead><tbody><tr><td>브라우저</td><td>Network Timing, TTFB, 스트림 이벤트 수, 종료 시각</td><td>200만으로 완료 판단 불가</td></tr><tr><td>WAF/L7</td><td>요청 ID, 종료 원인, Idle/Read Timeout, 정책 로그</td><td>차단 로그가 없다고 중간장비 무관 단정 금지</td></tr><tr><td>Proxy</td><td>upstream status, response time, buffering 설정</td><td>프록시 종료와 앱 종료 시각 비교</td></tr><tr><td>애플리케이션</td><td>Stream 시작/마지막 이벤트/완료 마커</td><td>정상 완료와 중간 예외 구분</td></tr><tr><td>DB/외부 API</td><td>대기 시간·오류·취소 이벤트</td><td>장시간 처리로 연결이 끊겼을 가능성</td></tr></tbody></table></div>
+<pre><code>가상 Correlation Timeline
+07:00:00 request_id=demo-123 /stream HTTP 200
+07:00:03 stream_event=started
+07:01:03 proxy_event=upstream_idle_timeout
+07:01:03 browser_event=stream_aborted
+07:01:04 app_event=cancelled
+결론: 증거가 일치하면 Timeout 정책을 가설로 검증.
+      정책 변경은 승인·부하시험·원복계획이 필요.</code></pre>
+<p>근본 원인을 확인하지 않고 Timeout만 무한히 늘리면 연결 점유와 메모리 비용이 증가한다. 장시간 연결의 동시성, heartbeat, 백엔드 처리시간을 함께 측정한다.</p>
+</section>
+<section id="s12"><h2>20.12 Dashboard·경보 수용 시험</h2>
+<ul><li>ERP/UC 핵심 기능별 성공률·p95·Traffic·Saturation을 한 화면에서 볼 수 있는가?</li><li>외부·내부 경로와 사용자 기능을 별도 Synthetic Test로 측정하는가?</li><li>배포/설정 변경 이벤트가 대시보드에 겹쳐 보이는가?</li><li>업무 실패·수집 장애·저트래픽 상황을 서로 구분하는가?</li><li>경보는 담당자, Runbook, 심각도, 사용자 영향, 중복 억제 규칙을 갖추었는가?</li><li>샘플링·보관기간·비식별화·접근권한의 보안 검증을 완료했는가?</li></ul>
+<aside class="note"><strong>Go/No-Go</strong><p>CPU·Pod 상태만 수집하고 핵심 업무 SLI가 없다면 운영 관측성 구축이 완료된 것으로 보지 않는다. 업무 성공 시나리오를 먼저 정의한다.</p></aside>
+<p>연관 장: <a href="chapter14-operations-slo.html">14장 SLO</a>, <a href="chapter15-troubleshooting.html">15장 계층별 진단</a>, <a href="chapter16-load-test.html">16장 부하 검증</a>. <p><strong>공식 기술 참고:</strong> <a href="https://opentelemetry.io/docs/concepts/context-propagation/" rel="noopener noreferrer">OpenTelemetry Context Propagation</a> · <a href="https://opentelemetry.io/docs/concepts/semantic-conventions/" rel="noopener noreferrer">Semantic Conventions</a> · <a href="https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/" rel="noopener noreferrer">Prometheus Recording/Alerting Rules</a> · <a href="https://kubernetes.io/docs/concepts/cluster-administration/logging/" rel="noopener noreferrer">Kubernetes Logging</a> · <a href="https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/" rel="noopener noreferrer">Kubernetes Auditing</a>.</p></p>
+</section>
+<nav class="chapter-nav"><a href="chapter20-observability-foundations.html">← 20장 이전 부</a><a href="chapter20-safe-automation.html">20장 다음 부 →</a></nav>
+</main></div><footer>OmniEsol SA 실전 가이드 · 20장 2부 · 2026-11-02 · 공개 교육용 원고</footer></body></html>

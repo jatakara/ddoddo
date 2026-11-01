@@ -1,0 +1,76 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="OmniEsol SA 실전 가이드 20장 3부: 자동화의 경계를 관찰·권고·승인·실행·검증으로 나누고, 사람의 책임과 안전 장치를 유지한다."><title>20장 3부 승인 기반 자동 점검·진단·복구 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body>
+<header><a href="index.html">← 전체 목차</a><p><span class="tag">20장 · 3/3부</span> Observability · SLO · Safe Automation</p><h1>승인 기반 자동 점검·진단·복구</h1><p>자동화의 경계를 관찰·권고·승인·실행·검증으로 나누고, 사람의 책임과 안전 장치를 유지한다.</p></header>
+<div class="layout"><nav class="toc"><strong>20장 3부 목차</strong><a href="#s13">20.13 자동화 성숙도와 책임 경계</a><a href="#s14">20.14 진단·복구 참조 아키텍처</a><a href="#s15">20.15 읽기 전용 자동 점검 예시</a><a href="#s16">20.16 Runbook 승인·실행 계약 예시</a><a href="#s17">20.17 자동 조치 위험 Matrix와 롤백</a><a href="#s18">20.18 운영 수용시험·RACI·향후 확장</a><hr><a href="chapter20-observability-foundations.html">20장 1부 · 관측성 설계와 Telemetry 표준</a><a href="chapter20-slo-alerting.html">20장 2부 · 서비스 SLO·알람·장애 상관분석</a><a href="chapter20-safe-automation.html">20장 3부 · 승인 기반 자동 점검·진단·복구</a><a href="index.html">1~20장 전체 목차</a></nav><main>
+<aside class="note"><strong>독립 공개 교육용 참조 원고</strong><p>이 장은 OmniEsol 공식 지원·설치·보안 정책을 대신하지 않는다. 모든 수치·서비스 이름·지표 이름은 교육용 가상 예시다. 실제 구축 시 제품 지원 Matrix, 고객 보안·개인정보 정책, 변경 승인 및 검증을 우선한다. 운영 계정·내부 주소·고객 정보는 포함하지 않는다.</p></aside><section id="s13"><h2>20.13 자동화 성숙도와 책임 경계</h2>
+<p>자동화는 반복 작업을 빠르게 실행할 수 있지만, 잘못된 판단도 빠르게 확산시킨다. 특히 ERP DB·Kubernetes·방화벽의 변경은 다수 서비스에 영향을 줄 수 있으므로 관찰(Read-only)과 변경(Mutation)을 엄격하게 분리한다.</p>
+<div class="scroll"><table><thead><tr><th>수준</th><th>허용 범위</th><th>예시</th><th>통제</th></tr></thead><tbody><tr><td>L0 수동</td><td>사람이 수집·판단·실행</td><td>점검표 수동 작성</td><td>승인·이력</td></tr><tr><td>L1 자동 관찰</td><td>읽기 전용 점검/보고</td><td>OS·DB·Pod 상태 수집</td><td>RBAC 최소권한</td></tr><tr><td>L2 자동 진단</td><td>가설·증거·위험 추천</td><td>Proxy 502 원인 후보 순위</td><td>신뢰도·증거 출처</td></tr><tr><td>L3 승인형 복구</td><td>사람이 승인 후 실행</td><td>승인된 Runbook 재기동</td><td>범위·만료·원복·감사</td></tr><tr><td>L4 제한된 자율 복구</td><td>사전 승인된 저위험 작업만</td><td>검증된 격리된 환경에서의 자동 처리</td><td>강한 정책·중단 스위치·사후검증</td></tr></tbody></table></div>
+<p>AI가 추천한 조치가 곧 실행 권한을 의미하지 않는다. 특히 고객사 운영환경의 DB 복원, 보안 정책 변경, Pod/Node 강제 삭제는 자동화 수준을 높인다는 이유로 무승인 실행하지 않는다.</p>
+</section>
+<section id="s14"><h2>20.14 진단·복구 참조 아키텍처</h2>
+<figure class="diagram"><div class="flow"><div class="node">관측: Metrics · Logs · Traces · Change Events</div><div class="arrow">↓</div><div class="node">상관분석: 서비스 맵 + Rule Engine + 선택적 AI 가설</div><div class="arrow">↓</div><div class="node">Policy Engine: 대상·위험·허용 시간·승인자·유효기간</div><div class="arrow">↓</div><div class="node">Approval Gate: 작업 ID · 실행 전 Diff · 사람 승인</div><div class="arrow">↓</div><div class="node">Runbook Executor: 최소권한 · Idempotency · Timeouts</div><div class="arrow">↓</div><div class="node">Post-check: SLO/업무 검증 → 성공/롤백/중단 · 감사로그</div></div><figcaption>그림 20-2. 증거 기반 승인형 자동화 참조 구조</figcaption></figure>
+<p>Policy Engine은 진단 결과와 분리한다. AI 모델이 텍스트로 “안전하다”고 말해도, 승인 범위 밖의 명령은 실행기가 거부해야 한다. 승인 객체는 작업 ID, 대상, 명령 해시, 유효시간, 승인자, 예상 영향과 롤백 계획을 포함한다.</p>
+<aside class="note"><strong>안전 경계</strong><p>실행기는 고정된 Runbook ID와 허용 파라미터만 받는다. 자연어를 셸 명령으로 직접 실행하거나, 로그 내용에 포함된 명령을 실행하지 않는다.</p></aside>
+</section>
+<section id="s15"><h2>20.15 읽기 전용 자동 점검 예시</h2>
+<p>자동 점검은 OS/WEB/WAS/DB/K8s의 상태를 모으되 인증정보와 업무 데이터를 수집하지 않는 방향으로 시작한다. 아래 명령은 승인된 관찰 권한을 가정한 예시이며, 환경별 호환성과 정보 노출 위험을 검토한다.</p>
+<pre><code># RHEL/Linux: 시스템 관찰
+uptime
+free -h
+df -hT
+ss -lnt
+journalctl --since "10 minutes ago" --priority=err --no-pager
+
+# Kubernetes: 지정 Namespace의 읽기 전용 진단
+kubectl -n demo get pods -o wide
+kubectl -n demo get svc,endpointslices
+kubectl -n demo get events --sort-by=.lastTimestamp
+
+# 참고: logs/describe는 민감정보 노출 가능.
+# 운영 승인과 필터링 없이는 수집하지 않는다.</code></pre>
+<div class="scroll"><table><thead><tr><th>수집 항목</th><th>자동 평가</th><th>추가 검증</th></tr></thead><tbody><tr><td>Disk 사용률</td><td>증가율·남은 용량·inode</td><td>로그 순환·백업 경로 확인</td></tr><tr><td>Pod Restart</td><td>빈도·OOMKilled 여부</td><td>Readiness·노드·리소스 한도</td></tr><tr><td>HTTP 5xx</td><td>서비스별 오류율·사용자 영향</td><td>WAF/Proxy/WAS 로그 상관분석</td></tr><tr><td>DB 연결</td><td>Pool Wait·Timeout·Active Session</td><td>DBA 승인 하에 SQL/Wait 분석</td></tr></tbody></table></div>
+<p>관찰 결과는 수집 시각, 명령 버전, 대상, 실행 주체, 실패 여부와 함께 저장한다. 비정상만 출력하면 정상 지표와 시간축을 비교하기 어렵다.</p>
+</section>
+<section id="s16"><h2>20.16 Runbook 승인·실행 계약 예시</h2>
+<p>다음 YAML은 <strong>설계 문서용 가상 계약</strong>이다. 특정 자동화 엔진에 바로 적용되는 실행 파일이 아니며, 위험 명령은 포함하지 않는다. 대상 식별과 권한 검증, 승인 만료, 실행 중단 조건을 명시한다.</p>
+<pre><code>apiVersion: operations.example.invalid/v1
+kind: ApprovedRunbookRequest
+metadata:
+  requestId: INC-DEMO-0020
+spec:
+  environment: stage
+  target:
+    service: erp-web
+    scope: one-instance
+  runbookId: inspect-http-upstream-v1
+  mode: read-only
+  approval:
+    required: true
+    approverRole: oncall-operator
+    expiresAt: "2026-11-02T02:00:00Z"
+  guardrails:
+    maxDurationSeconds: 60
+    allowShellFromUserInput: false
+    denySecretsInOutput: true
+    requireAuditLog: true
+  verification:
+    expectedEvidence:
+      - http-status
+      - upstream-health
+      - recent-change-id</code></pre>
+<p>실제 실행기는 <code>runbookId</code>를 버전 고정된 코드와 매핑하고, <code>scope</code>가 승인 범위를 벗어나면 거부해야 한다. 재시도는 Idempotency Key로 중복 실행을 방지하고, 타임아웃 이후에는 실행 결과를 확인한 뒤 재개한다.</p>
+</section>
+<section id="s17"><h2>20.17 자동 조치 위험 Matrix와 롤백</h2>
+<div class="scroll"><table><thead><tr><th>조치 유형</th><th>자동화 후보</th><th>사전 조건</th><th>금지/중단 조건</th></tr></thead><tbody><tr><td>로그·메트릭 수집</td><td>L1 읽기 전용</td><td>RBAC·민감정보 필터</td><td>수집 자체가 업무 부하 유발</td></tr><tr><td>캐시 정리/서비스 재시작</td><td>L3 승인형 검토</td><td>단일 인스턴스·Drain·업무 검증</td><td>DB 의존성 불명확, 피크 부하</td></tr><tr><td>K8s Pod 재생성</td><td>L3 승인형 검토</td><td>Replica 여유·PDB·Stateful 여부 확인</td><td>단일 Pod·데이터 손실 위험</td></tr><tr><td>DB Failover/Restore</td><td>수동 전문 승인</td><td>RPO/RTO·복구 시험·DBA 확인</td><td>복제 지연·정합성 미검증</td></tr><tr><td>방화벽/WAF 정책 변경</td><td>보안 승인 필수</td><td>범위 제한·만료·회귀 시험</td><td>보안 통제 약화·전체 허용</td></tr></tbody></table></div>
+<p>롤백은 변경 전 상태를 되돌리는 기술 절차와 사용자 업무 정합성 확인을 함께 포함한다. 데이터 변경이 이미 발생했다면 이전 바이너리 배포만으로 롤백이 완료되지 않는다. 실행 전·후 SLI, 오류율, DB 상태, 감사기록을 비교한다.</p>
+<aside class="note"><strong>기술적 부채</strong><p>'모든 502를 Proxy 재시작으로 해결' 같은 단일 규칙은 원인을 가리고 장애를 재발시킨다. 증거가 부족하면 자동 실행이 아니라 진단 중단과 사람에게 에스컬레이션한다.</p></aside>
+</section>
+<section id="s18"><h2>20.18 운영 수용시험·RACI·향후 확장</h2>
+<div class="scroll"><table><thead><tr><th>역할</th><th>책임</th></tr></thead><tbody><tr><td>SA</td><td>서비스 맵·SLO·정책 범위·Go/No-Go 정의</td></tr><tr><td>운영자/On-call</td><td>증거 검토·실행 승인·업무 복구 검증</td></tr><tr><td>DBA</td><td>DB 트랜잭션·백업·Failover/Restore 승인</td></tr><tr><td>보안 담당</td><td>비밀정보·RBAC·네트워크·감사 정책 승인</td></tr><tr><td>자동화 플랫폼 담당</td><td>Runbook 코드·테스트·실행 로그·Rollback 구현</td></tr><tr><td>업무 책임자</td><td>핵심 업무 영향·복구 수용 확인</td></tr></tbody></table></div>
+<ul><li>수집 장애가 실제 ERP/UC 서비스 장애를 일으키지 않는가?</li><li>가짜 오류·SLO 위반·수집 결손을 각각 주입해 정확한 알림을 확인했는가?</li><li>권한 없는 실행·승인 만료·대상 범위 초과를 강제로 거부하는가?</li><li>중복 요청, 실행 중단, 네트워크 타임아웃 후 재시도 안전성을 시험했는가?</li><li>모든 실행에 변경 ID·승인자·명령 버전·결과·원복 여부가 남는가?</li><li>장애 복구 뒤 로그인·조회·저장·UC 주요 기능을 실제 검증하는가?</li></ul>
+<p>향후 확장 순서는 <strong>읽기 전용 진단 정확도 → 서비스별 SLO → 승인형 복구 → 안전성 실증</strong>이다. 먼저 데이터가 믿을 만한지 확인하고, 이후 실행 권한을 좁은 범위에서 점진적으로 늘린다.</p>
+<p>연관 장: <a href="chapter14-operations-runbook.html">14장 운영 Runbook</a>, <a href="chapter17-security-operations.html">17장 보안 운영</a>, <a href="chapter18-dr-operations.html">18장 DR</a>, <a href="chapter19-release-runbook.html">19장 변경 승인</a>.</p>
+<p><strong>공식 기술 참고:</strong> <a href="https://opentelemetry.io/docs/concepts/context-propagation/" rel="noopener noreferrer">OpenTelemetry Context Propagation</a> · <a href="https://opentelemetry.io/docs/concepts/semantic-conventions/" rel="noopener noreferrer">Semantic Conventions</a> · <a href="https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/" rel="noopener noreferrer">Prometheus Recording/Alerting Rules</a> · <a href="https://kubernetes.io/docs/concepts/cluster-administration/logging/" rel="noopener noreferrer">Kubernetes Logging</a> · <a href="https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/" rel="noopener noreferrer">Kubernetes Auditing</a>.</p>
+<aside class="note"><strong>다음 집필</strong><p>21장 표준 운영 아키텍처와 기술 부채 관리 — 구성 표준화, 인프라 형상·CMDB, 예외 승인, 운영 비용과 개선 우선순위.</p></aside>
+</section>
+<nav class="chapter-nav"><a href="chapter20-slo-alerting.html">← 20장 이전 부</a><a href="index.html">1~20장 목차 →</a></nav>
+</main></div><footer>OmniEsol SA 실전 가이드 · 20장 3부 · 2026-11-02 · 공개 교육용 원고</footer></body></html>
