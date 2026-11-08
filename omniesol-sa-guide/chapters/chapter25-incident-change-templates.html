@@ -1,0 +1,51 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="장애 타임라인·증거·원인 가설·변경 위험·원복 판단을 감사 가능한 형태로 기록한다."><title>25장 장애 분석 보고서와 변경 승인서 | OmniEsol SA 실전 가이드</title><link rel="stylesheet" href="guide-chapter.css"></head><body><header><a href="index.html">← 전체 목차</a><p><span class="tag">25장 · 2/3부</span> 표준 운영 산출물 · 실습</p><h1>장애 분석 보고서와 변경 승인서</h1><p>장애 타임라인·증거·원인 가설·변경 위험·원복 판단을 감사 가능한 형태로 기록한다.</p></header><div class="layout"><nav class="toc"><strong>25장 2/3부 목차</strong><a href="#s7">25.7 장애 접수 카드와 영향 범위</a><a href="#s8">25.8 타임라인과 원인 분석(PIR)</a><a href="#s9">25.9 변경 승인서의 필수 항목</a><a href="#s10">25.10 배포 Manifest와 증거 체인</a><a href="#s11">25.11 Go/No-Go와 변경 후 검증</a><a href="#s12">25.12 2부 완료 기준</a><hr><a href="chapter25-service-catalog-checklists.html">1부 · 서비스 카탈로그와 운영 점검표</a><a href="chapter25-incident-change-templates.html">2부 · 장애 분석 보고서와 변경 승인서</a><a href="chapter25-recovery-handover-lab.html">3부 · 복구 훈련·운영 인수인계와 현장 실습</a><a href="index.html">전체 목차</a></nav><main><aside class="note"><strong>독립 공개 교육용 원고</strong><p>모든 식별자·업무 시나리오·시간·점수는 가상 예시다. 실제 고객 정보·내부 IP·계정·인증정보를 수록하지 않는다. 공식 지원 사양·계약·승인 절차가 우선한다.</p></aside><section id="s7"><h2>25.7 장애 접수 카드와 영향 범위</h2><p>장애 초기에는 추정 원인을 확정적으로 기록하지 않는다. 사용자에게 나타난 현상, 최초 탐지, 영향 업무, 최근 변경, 증거 신뢰도를 분리해야 한다.</p><pre><code>Incident ID: INC-EXAMPLE-001
+최초 탐지: YYYY-MM-DD HH:MM KST
+보고자/담당 역할: &lt;...&gt;
+서비스 ID: ERP-EXAMPLE | UC-EXAMPLE
+영향: ERP 저장 실패 / 외부망 UC 연결 끊김 등
+영향 사용자/범위: 확인된 범위만 기재
+현재 상태: Investigating | Mitigated | Resolved
+최근 변경: 변경 ID 또는 '확인 중'
+사용자 메시지/HTTP 코드: &lt;민감정보 제거&gt;
+관측 증거: 로그 요청 ID, 메트릭 시각, 알람 ID
+가설: H1 / H2 / H3 (확인 전)
+다음 점검 시각/책임자: &lt;...&gt;</code></pre><div class="scroll"><table><thead><tr><th>확인 질문</th><th>의미</th></tr></thead><tbody><tr><td>내부망과 외부망 모두 실패하는가?</td><td>DNS·WAF·L7 등 경로 분리</td></tr><tr><td>조회는 되는데 저장만 실패하는가?</td><td>WAS·DB·권한·Commit 구분</td></tr><tr><td>특정 사용자/브라우저만 실패하는가?</td><td>인증·세션·클라이언트 범위</td></tr><tr><td>최근 배포/정책 변경이 있었는가?</td><td>변경과 장애의 시간적 상관관계</td></tr><tr><td>지표가 사라졌는가?</td><td>수집 장애와 실제 장애 분리</td></tr></tbody></table></div></section><section id="s8"><h2>25.8 타임라인과 원인 분석(PIR)</h2><p>사후 분석(Post-Incident Review)은 개인 책임 추궁보다 시스템적 재발 방지에 초점을 둔다. '원인'은 로그·재현·설정 차이 등의 증거로 뒷받침되어야 하며, 확인되지 않은 경우 가설로 남긴다.</p><div class="scroll"><table><thead><tr><th>시각(예시)</th><th>관측 사실</th><th>근거</th><th>판단</th></tr></thead><tbody><tr><td>10:02</td><td>외부 UC 연결 실패율 증가</td><td>Proxy 지표</td><td>확인됨</td></tr><tr><td>10:05</td><td>내부 경로는 정상</td><td>Synthetic Test</td><td>확인됨</td></tr><tr><td>10:10</td><td>L7 변경 이력 발견</td><td>변경 기록</td><td>상관관계</td></tr><tr><td>10:18</td><td>설정 차이 확인</td><td>승인된 설정 Diff</td><td>가설 강화</td></tr><tr><td>10:35</td><td>승인된 원복 후 업무 복구</td><td>연결·메시지 시험</td><td>복구 확인</td></tr></tbody></table></div><pre><code>PIR 요약
+- 사고 개요 및 실제 업무 영향:
+- 탐지 지연/대응 시간/업무 복구 시간:
+- 확정된 기술 원인 / 남은 가설:
+- 기여 요인: 모니터링, 변경 검증, 문서, 공통 장애점
+- 잘 작동한 통제 / 실패한 통제:
+- 단기 재발 방지: &lt;Owner, Due date, Evidence&gt;
+- 구조적 개선: &lt;ADR/개선 과제 ID&gt;
+- 효과 검증: 동일 업무 SLI 전후 비교
+- 최종 검토/승인: &lt;역할&gt;</code></pre><aside class="note"><strong>현장 적용 판단</strong><p>원인 미확정 상태에서 'WAS 장애' 등 단정적 결론을 내리지 않는다. 장애가 복구되었더라도 데이터 정합성·미처리 큐·재전송 여부를 별도 확인한다.</p></aside></section><section id="s9"><h2>25.9 변경 승인서의 필수 항목</h2><p>운영 변경은 기술적 성공뿐 아니라 실패 시의 업무 손실을 검토해야 한다. 위험도는 영향 범위, 변경의 되돌릴 수 있는 정도, 데이터 변경, 예상 중단 시간과 검증 가능성으로 판단한다.</p><pre><code>Change ID: CHG-EXAMPLE-025
+대상: ERP WEB / UC Ingress / DB / OS 등
+목적 및 업무 효과:
+현재 설정/버전 및 변경 후 목표:
+제품 지원 Matrix 검토: PASS | FAIL | UNKNOWN
+변경 대상/제외 대상(Manifest):
+영향 사용자/시스템/예상 중단:
+보안 영향: 권한/TLS/방화벽/로그
+확장성 영향: N+1/CPU/메모리/연결 수
+사전 백업 및 복구 가능성 증거:
+실행 단계/담당자/점검 시각:
+Go/No-Go 조건:
+원복 절차/원복 불가능 구간:
+업무 검증: 로그인·조회·저장·UC 연결
+승인: 업무 Owner / 변경 승인권자 / 보안 협의
+사후 결과/증거 링크:</code></pre><div class="scroll"><table><thead><tr><th>변경 유형</th><th>핵심 위험</th><th>원복 검증</th></tr></thead><tbody><tr><td>Proxy Timeout/Rewrite</td><td>우회 경로·세션·보안 예외</td><td>이전 설정·업무 경로 테스트</td></tr><tr><td>WAS/JDK 패치</td><td>호환성·세션·GC</td><td>지원 버전·기존 패키지</td></tr><tr><td>DB 스키마 변경</td><td>비가역 데이터 변경</td><td>Forward Fix/복구 전략 별도</td></tr><tr><td>K8s 배포</td><td>Ready·리소스·PVC 영향</td><td>Deployment와 데이터 복구 분리</td></tr><tr><td>방화벽 정책</td><td>과다 허용·연계 차단</td><td>정책 Diff와 최소 포트</td></tr></tbody></table></div></section><section id="s10"><h2>25.10 배포 Manifest와 증거 체인</h2><p>디렉터리 기반 배포는 승인되지 않은 파일이 함께 반영되는 위험이 있다. 릴리스 Artifact를 고정하고 해시·승인 Manifest를 통해 실제 배포 범위를 명시해야 한다.</p><pre><code>release_id: REL-EXAMPLE-025
+artifact: omniesol-example-package.tar.gz
+sha256: &lt;64자리 검증된 해시&gt;
+approved_paths:
+  - /app/static/released/
+  - /app/config/approved/
+excluded_paths:
+  - /app/work-in-progress/
+environment: STAGE -&gt; PROD
+approval_ticket: CHG-EXAMPLE-025
+rollback_artifact: REL-EXAMPLE-024
+db_migration: NONE | FORWARD_ONLY | REVERSIBLE
+verification:
+  - erp-login
+  - erp-save-transaction
+  - uc-external-connection</code></pre><p>실제 파일 해시는 빌드 시스템에서 계산하며 문서에 가상의 해시를 복사해 사용하지 않는다. 배포 실행 시 승인된 Manifest와 실제 파일 목록을 비교하고 차이가 있으면 배포를 중단한다.</p><aside class="note"><strong>현장 적용 판단</strong><p>기존 배포 구조를 유지하면 도입 비용은 낮지만 누락된 의존성이나 잘못된 예외 필터의 위험이 남는다. 완전한 Immutable Artifact 배포는 통제력이 높지만 파이프라인 개선 비용과 운영 전환 부담이 크다.</p></aside></section><section id="s11"><h2>25.11 Go/No-Go와 변경 후 검증</h2><div class="scroll"><table><thead><tr><th>Gate</th><th>GO</th><th>NO-GO</th></tr></thead><tbody><tr><td>지원성</td><td>제품·OS·DB·WAS 버전 검증</td><td>미검증 조합</td></tr><tr><td>보안</td><td>접근·인증·TLS 영향 검토</td><td>과권한/미승인 포트</td></tr><tr><td>복구</td><td>원복 경로와 백업 확인</td><td>비가역 변경 대응 없음</td></tr><tr><td>성능</td><td>Baseline과 N+1 여유</td><td>부하 증거 없음</td></tr><tr><td>업무</td><td>시험 계정·검증 시나리오 준비</td><td>업무 성공 판정 불가</td></tr><tr><td>승인</td><td>책임자 승인 기록</td><td>승인자 불명확</td></tr></tbody></table></div><p>변경 후에는 프로세스 Running 상태만 확인하지 않는다. 승인된 업무 시나리오를 수행하고 오류율·지연·데이터 정합성을 비교한다. 관측값이 기준을 초과하면 사전 정의된 중단·원복 조건을 적용한다.</p><ul><li>실행 로그와 변경 전후 설정 Diff를 저장한다.</li><li>업무 Owner가 사용자 관점의 정상성을 확인한다.</li><li>DB 데이터 변경은 애플리케이션 롤백과 별도로 판단한다.</li><li>원복 후에도 데이터 및 메시지 중복·누락을 검증한다.</li></ul></section><section id="s12"><h2>25.12 2부 완료 기준</h2><ul><li>장애 접수 카드에 사실과 가설이 분리되어 있다.</li><li>타임라인의 시각·로그·변경 이력에 상호 참조 ID가 있다.</li><li>PIR 개선 과제에 Owner·기한·검증 방법이 있다.</li><li>변경 승인서에 지원성·보안·용량·원복·업무 검증이 포함된다.</li><li>배포 Manifest가 승인 파일과 제외 파일을 명시한다.</li><li>운영 변경 권한과 승인 권한이 분리되어 있다.</li></ul><p>다음 3부에서는 복구 훈련과 운영 인수인계를 검증 가능한 산출물로 연결한다.</p></section><nav class="chapter-nav"><a href="chapter25-service-catalog-checklists.html">← 이전</a><a href="index.html">전체 목차</a><a href="chapter25-recovery-handover-lab.html">다음 →</a></nav></main></div><footer>OmniEsol SA 실전 가이드 · 2026-11-09 · 25장 · 2/3부 · 공개 교육용 원고</footer></body></html>
