@@ -1,0 +1,31 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>38장 인프라 현대화와 마이그레이션 전략</title><style>*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#1e293b;font:16px/1.85 sans-serif}main{max-width:960px;margin:24px auto;padding:32px;background:white}h1,h2{color:#183b72}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccd7e5;padding:9px;text-align:left}th{background:#e8f0fa}pre{background:#eef2f7;padding:16px;overflow:auto}a{color:#1d4ed8}@media(max-width:760px){main{margin:0;padding:16px}}@media print{body{background:white}main{margin:0}}</style></head><body><main><nav><a href="index.html">전체 목차</a> · <a href="chapter37-capacity-lifecycle.html">이전 장</a></nav><h1>38장 인프라 현대화와 마이그레이션 전략</h1><p>2026-11-26 · 독립 교육용 참조 가이드. 구성과 수치는 가상 사례이며 제품 공식 지원 조건은 별도 확인한다.</p>
+<pre>현행 ERP / UC / DB / 파일
+        │  초기 복제 + 변경분 동기화
+        ▼
+신규 격리 환경 → 기능·성능·복구 시험
+        │  쓰기 차단 → 최종 동기화 → 정합성 검증
+        ▼
+L4/L7 또는 DNS 전환 → 업무 검수 → 운영 수용
+        │
+        └─ 실패: 쓰기 발생 여부에 따른 복구 판단</pre>
+<section><h2>38.1 현대화의 목적과 현행 조사</h2><p>마이그레이션은 서버를 옮기는 작업이 아니라 업무 상태와 서비스 의존성을 새로운 환경으로 이전하는 작업이다. 노후 장비 교체, 지원 종료, 용량 부족, 장애 격리 개선 중 무엇을 해결할지 먼저 정의한다. 현행과 목표의 응답시간, RTO/RPO, 비용, 보안 요구를 비교한다. 단순 이전과 버전 업그레이드를 동시에 수행하면 실패 원인과 원복 범위가 복잡해지므로 가능한 한 변경을 분리한다.</p><table><tr><th>조사 대상</th><th>필수 증거</th></tr><tr><td>ERP WEB/WAS</td><td>버전, JVM, JDBC, 세션, 배치 스케줄, 외부 연계</td></tr><tr><td>Oracle</td><td>버전·에디션, 문자집합, 데이터량, redo 발생량, 백업 복구 시험</td></tr><tr><td>UC/Kubernetes</td><td>이미지 digest, API 버전, PVC, Secret 참조, Ingress, 외부 DB</td></tr><tr><td>네트워크</td><td>DNS, VIP, TLS 종료점, 방화벽 흐름, SMTP 및 외부 허용 IP</td></tr></table></section>
+<section><h2>38.2 목표 아키텍처 선택</h2><table><tr><th>방식</th><th>장점</th><th>제약</th></tr><tr><td>물리 → 물리</td><td>변경 범위 최소화</td><td>조달 기간, 확장 한계</td></tr><tr><td>물리 → VM</td><td>자원 배치 및 운영 표준화</td><td>CPU 경합, 공유 스토리지, 라이선스</td></tr><tr><td>온프레미스 → 클라우드</td><td>자원 확보와 확장 유연성</td><td>지연, egress 비용, 계약·데이터 위치</td></tr><tr><td>신규 K8s 클러스터</td><td>독립 검증 및 장애 격리</td><td>상태 데이터 이전, API 호환성</td></tr></table><p>ERP 단독형, UC 단독형, 통합형, 분리형별로 데이터와 인증 의존성을 다시 그린다. 가상 CPU 수만으로 물리 코어 성능을 환산하지 않는다. 신규 환경은 피크 업무량과 N+1 조건을 동시에 검증하고, DB 라이선스와 제품 지원 Matrix를 서면 확인한다.</p></section>
+<section><h2>38.3 Oracle 데이터 이관</h2><p>Data Pump는 논리적 객체 이전에 적합하지만 전체 DB 상태나 외부 파일을 자동으로 이전하지 않는다. RMAN 복원은 물리적 복구에 유리하나 플랫폼·버전·엔디언 제약을 확인해야 한다. Data Guard 또는 CDC 기반 동기화는 중단 시간을 줄일 수 있지만 지원 버전, 에디션, 라이선스와 적용 지연을 검증해야 한다. DBA는 객체, 권한, DB Link, Scheduler, Sequence, 문자집합 및 시간대 설정을 확인한다.</p><pre>SELECT name, open_mode, database_role FROM v$database;
+SELECT parameter, value FROM nls_database_parameters
+WHERE parameter IN ('NLS_CHARACTERSET','NLS_NCHAR_CHARACTERSET');
+SELECT owner, object_type, COUNT(*) FROM dba_objects
+WHERE status = 'INVALID' GROUP BY owner, object_type;</pre><p>권한이 부여된 DBA의 읽기 전용 예시다. 동일 업무 시점 또는 일관된 SCN 기준으로 주요 테이블 건수, 금액 합계, 참조 무결성, 업무 샘플을 비교한다. 건수 일치만으로 정합성을 보장하지 않는다. 검증 쿼리 자체의 부하도 사전 측정한다.</p></section>
+<section><h2>38.4 ERP WEB/WAS 전환</h2><p>지원되는 설치 패키지로 신규 환경을 구성하고 설정 차이를 검토한다. 기존 디렉터리를 무조건 복사하지 않는다. JDBC 연결, TLS 신뢰 저장소, 파일 경로, 외부 API, 배치 실행 권한을 검증한다. 신규 환경의 배치와 메일 발송은 전환 승인 전까지 차단하여 중복 결재·발송·전표 처리를 방지한다. 세션 이전이 지원되지 않으면 재로그인 가능성을 공지한다.</p><pre>systemctl --failed
+ss -lnt
+curl --fail --silent --show-error --max-time 10 https://example.com/</pre><p>예시 도메인을 승인된 시험 주소로 바꾼다. HTTP 성공은 업무 정상의 충분조건이 아니다. 로그인, 조회, 저장, 첨부, 배치 및 외부 연계를 시험한다.</p></section>
+<section><h2>38.5 Kubernetes UC 이전</h2><p>선언형 리소스와 상태 데이터를 분리한다. 신규 클러스터에서 CNI, CSI, StorageClass, Ingress, 인증서, 이미지 접근, DNS 및 NetworkPolicy를 검증한다. PVC 스냅샷은 스토리지 드라이버와 애플리케이션 일관성 조건을 확인한다. Secret은 승인된 비밀 저장소에서 재주입하며 평문 YAML을 저장소에 올리지 않는다. StatefulSet 복제본 증가를 데이터 복제와 동일시하지 않는다.</p><pre>kubectl get nodes
+kubectl get deployments,statefulsets -A
+kubectl get pvc -A
+kubectl get storageclass
+kubectl get ingress -A
+kubectl get endpointslices -A</pre><p>메시지·첨부파일·인증·실시간 연결·외부 DB를 검수한다. 기존 클러스터와 신규 클러스터가 동일한 쓰기 대상이나 소비자 그룹을 동시에 사용하지 않도록 제품 지원 방식으로 제어한다.</p></section>
+<section><h2>38.6 전환 방식과 중단시간 산정</h2><table><tr><th>방식</th><th>적합 조건</th><th>위험</th></tr><tr><td>Big Bang</td><td>의존성이 강하고 중단 허용</td><td>한 번의 실패 영향이 큼</td></tr><tr><td>단계적 전환</td><td>업무 경계와 데이터 소유권 분리 가능</td><td>혼합 버전·연계 복잡성</td></tr><tr><td>사전 복제 후 전환</td><td>지원되는 변경분 동기화</td><td>복제 지연·쓰기 충돌</td></tr></table><p>가상 사례: 2 TB를 실효 200 MB/s로 복제하면 십진 단위 기준 약 2.78시간이다. 사전 복제 후 쓰기 차단 시 잔여 변경분 60 GB는 약 5분이다. 쓰기 차단 10분, 최종 동기화 5분, 정합성 20분, 트래픽 전환 10분, 업무 검수 25분, 예비 20분을 순차 수행하면 총 90분이다. 실효 처리량에는 압축, 암호화, I/O 경합 및 프로토콜 오버헤드가 반영되어야 한다. 변경분 적용 속도가 생성 속도보다 낮으면 사전 복제가 수렴하지 않는다.</p></section>
+<section><h2>38.7 Cutover Runbook</h2><table><tr><th>단계</th><th>담당</th><th>완료 증거</th></tr><tr><td>T-7일</td><td>SA·운영</td><td>리허설, DNS TTL 계획, 복구 시험</td></tr><tr><td>T-0</td><td>업무·운영</td><td>변경 승인, 신규 요청 및 배치 차단</td></tr><tr><td>최종 동기화</td><td>DBA·플랫폼</td><td>쓰기 차단 확인, 복제 지연 해소</td></tr><tr><td>정합성</td><td>DBA·업무</td><td>핵심 데이터 비교 및 승인</td></tr><tr><td>전환</td><td>네트워크</td><td>VIP/DNS, TLS, 실제 클라이언트 연결</td></tr><tr><td>수용</td><td>업무 소유자</td><td>필수 업무 및 성능 검증</td></tr></table><p>DNS TTL을 낮춰도 모든 캐시가 즉시 갱신되지는 않는다. 기존 연결과 신규 연결을 각각 확인한다. 단계별 책임자, 시작·종료 시각, 증거 위치, 중단 기준을 기록한다.</p></section>
+<section><h2>38.8 Rollback과 데이터 쓰기 경계</h2><p>신규 환경에 업무 쓰기가 시작되기 전에는 기존 환경이 변경되지 않았음을 확인한 후 트래픽을 되돌릴 수 있다. 쓰기 이후에는 단순 VIP 원복이나 VM 스냅샷 복원이 신규 거래를 유실시킬 수 있다. 역방향 복제 또는 승인된 데이터 재조정 절차가 검증되지 않았다면 쓰기 이후 원복을 자동 실행하지 않는다. 양쪽 쓰기를 차단하고 DBA와 업무 소유자가 복구 방향을 결정한다.</p><table><tr><th>판정</th><th>조치</th></tr><tr><td>쓰기 전 필수 검증 실패</td><td>전환 중단, 기존 환경 복귀 검토</td></tr><tr><td>쓰기 후 데이터 불일치</td><td>양쪽 쓰기 차단, 정합성 복구 승인</td></tr><tr><td>보안 또는 권한 위반</td><td>격리, 증거 보존, 사고 대응</td></tr></table></section>
+<section><h2>38.9 비용과 운영 수용</h2><p>가상 사례: 신규 환경 3,000만원, 이관 작업 800만원, 병행 운영 200만원, 업무 중단 1.5시간 × 시간당 추정 손실 100만원이면 전환 관련 총비용은 4,150만원이다. 실제 손실은 업무 지연과 회복 가능한 매출을 구분하여 산정한다. 5년 TCO에는 라이선스, 네트워크, 백업, 보안, 운영 인력, 폐기 비용을 포함한다.</p><ul><li>제품 지원 및 라이선스 확인</li><li>최종 동기화·정합성 증거 확보</li><li>필수 ERP/UC 업무와 외부 연계 검수</li><li>피크 부하·장애 상태 용량 및 보안 검증</li><li>신규 환경 백업 및 복구 시험</li><li>쓰기 이후 복구 정책 및 책임자 승인</li><li>Hypercare 종료 후 기존 환경 폐기 승인 및 안전한 데이터 삭제</li></ul><p>필수 항목이 실패하거나 증거가 없으면 No-Go다. 기존 환경은 보존 기간 동안 격리하고 승인 없이 삭제하지 않는다.</p></section>
+<h2>다음 장</h2><p>39장 재해복구 아키텍처와 업무 연속성 설계</p></main></body></html>
